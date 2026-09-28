@@ -1,0 +1,4 @@
+﻿source.pdf
+*.pdf
+pilot/
+__pycache__/
