@@ -1,0 +1,150 @@
+﻿import json, os, pathlib, re, math, collections
+import numpy as np
+from google import genai
+from google.genai import types, errors
+import time
+
+BASE = pathlib.Path(r"C:\Users\sandy\dev\lab-rag\pilot")
+CHUNKS = BASE / "chunks"
+MANIFEST = BASE / "chunks_manifest.json"
+EMB = BASE / "emb_chunks.npy"
+OUT = BASE / "jawaban_hibrida.txt"
+EMB_MODEL = "gemini-embedding-001"
+CHAT_MODELS = ["gemini-3-flash-preview", "gemini-3.8-flash"]
+TOPK = 5
+K1, B = 1.5, 0.75
+RRF_K = 60
+
+QUESTIONS = [
+    ("Q1", "Which pharmaceutical is listed as an anti-fungal intervention for intestinal overgrowth?", ["nystatin"]),
+    ("Q2", "What is the reference limit for urinary hippurate?", ["hippurate", "786"]),
+    ("Q3", "In what percentage of patients were elevated D-arabinitol/creatinine ratios reported, and in which patient groups?", ["9% of patients"]),
+    ("Q4", "What is the reference limit for urinary methylmalonate?", ["methylmalon"]),
+    ("Q5", "What is the reference limit for \u03b1-ketoisocaproate?", ["ketoisocaproate", "0.58"]),
+]
+
+SYSTEM = (
+    "You answer questions using ONLY the numbered excerpts provided from a clinical laboratory reference book. "
+    "Never use outside knowledge, even if you are confident. "
+    "If the excerpts do not explicitly state the answer, set canAnswer to false and leave answer empty. "
+    "If the excerpts contain only part of the answer, set canAnswer to false and explain what is missing in note. "
+    "Copy every number exactly as printed, including units and comparison signs such as <= or <. "
+    "The excerpts contain extraction noise: isolated single letters on their own lines come from a vertical page watermark and carry no meaning. "
+    "Respond as JSON with keys: canAnswer (boolean), answer (string), quote (the exact line or sentence from the excerpt that supports the answer), "
+    "chunkIds (list of excerpt ids used), note (string)."
+)
+
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+
+def asc(s):
+    return str(s).encode("ascii", "replace").decode("ascii")
+
+manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+ids = [c["id"] for c in manifest]
+meta = {c["id"]: c for c in manifest}
+texts = [(CHUNKS / f"{i}.txt").read_text(encoding="utf-8") for i in ids]
+M = np.load(EMB)
+Mn = M / np.linalg.norm(M, axis=1, keepdims=True)
+
+r = client.models.embed_content(
+    model=EMB_MODEL,
+    contents=[q for _, q, _ in QUESTIONS],
+    config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
+)
+Q = np.array([e.values for e in r.embeddings], dtype=np.float32)
+Qn = Q / np.linalg.norm(Q, axis=1, keepdims=True)
+S = Qn @ Mn.T
+
+GREEK = str.maketrans({"\u03b1": "a", "\u03b2": "b", "\u00df": "b", "\u03b3": "g", "\u03b4": "d", "\u03bc": "u", "\u00b5": "u"})
+
+def tok(s):
+    s = s.lower().translate(GREEK)
+    return [t for t in re.split(r"[^a-z0-9.%]+", s) if len(t) >= 2]
+
+docs = [tok(t) for t in texts]
+N = len(docs)
+avgdl = sum(len(d) for d in docs) / N
+df = collections.Counter(w for d in docs for w in set(d))
+tfs = [collections.Counter(d) for d in docs]
+
+def bm25(q):
+    qt = tok(q)
+    out = []
+    for i, d in enumerate(docs):
+        sc = 0.0
+        for w in qt:
+            f = tfs[i].get(w, 0)
+            if not f:
+                continue
+            idf = math.log(1 + (N - df[w] + 0.5) / (df[w] + 0.5))
+            sc += idf * f * (K1 + 1) / (f + K1 * (1 - B + B * len(d) / avgdl))
+        out.append(sc)
+    return out
+
+def ranks(order):
+    return {j: r for r, j in enumerate(order, 1)}
+
+def ask(prompt):
+    last = None
+    for m in CHAT_MODELS:
+        for attempt in range(3):
+            try:
+                resp = client.models.generate_content(
+                    model=m,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM,
+                        temperature=0,
+                        response_mime_type="application/json",
+                        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+                    ),
+                )
+                return m, resp.text
+            except errors.ServerError as e:
+                last = e
+                print(f"  {m}: server sibuk (percobaan {attempt + 1}/3), tunggu {10 * (attempt + 1)} detik")
+                time.sleep(10 * (attempt + 1))
+            except Exception as e:
+                last = e
+                print(f"  {m}: gagal ({type(e).__name__}), pindah ke model berikutnya")
+                break
+    raise SystemExit(f"semua model gagal: {asc(last)}")
+
+log = []
+for qi, (qid, q, markers) in enumerate(QUESTIONS):
+    emb_order = list(np.argsort(-S[qi]))
+    b = bm25(q)
+    bm_order = sorted(range(N), key=lambda j: -b[j])
+    re_, rb = ranks(emb_order), ranks(bm_order)
+    fused = {j: 1 / (RRF_K + re_[j]) + 1 / (RRF_K + rb[j]) for j in range(N)}
+    order = sorted(range(N), key=lambda j: -fused[j])
+    gold_idx = [j for j in range(N) if all(mk in texts[j].lower() for mk in markers)]
+    if gold_idx:
+        g = min(gold_idx, key=lambda j: ranks(order)[j])
+        gold_rank = ranks(order)[g]
+        gold_info = f"{ids[g]} emb#{re_[g]} bm25#{rb[g]} gabungan#{gold_rank}"
+    else:
+        gold_rank = None
+        gold_info = "tidak ada"
+    top = order[:TOPK]
+    ctx = []
+    for j in top:
+        cid = ids[j]
+        ctx.append(f"[excerpt {cid} | PDF pages {meta[cid]['page']}]\n{texts[j]}")
+    prompt = "Question: " + q + "\n\nExcerpts:\n\n" + "\n\n".join(ctx)
+    model_used, raw = ask(prompt)
+    try:
+        ans = json.loads(raw)
+    except Exception:
+        ans = {"canAnswer": None, "answer": raw, "quote": "", "chunkIds": [], "note": "JSON tidak valid"}
+    pages = sorted({p for cid in ans.get("chunkIds", []) if cid in meta for p in meta[cid]["page"]})
+    print(f"{qid}  chunk-emas: {gold_info}  | canAnswer={ans.get('canAnswer')}  | hal {pages}")
+    log.append(f"\n########## {qid}: {q}")
+    log.append(f"model: {model_used}")
+    log.append(f"chunk-emas (penanda {markers}): {gold_info}")
+    log.append("top-5 gabungan: " + ", ".join(f"{ids[j]}(emb#{re_[j]} bm25#{rb[j]})" for j in top))
+    log.append("halaman PDF dari chunkIds jawaban: " + str(pages))
+    log.append(json.dumps(ans, ensure_ascii=False, indent=2))
+    OUT.write_text("\n".join(log), encoding="utf-8")
+
+print("detail tersimpan di pilot\\jawaban_hibrida.txt")
