@@ -346,3 +346,10 @@ Temuan:
 3. Kandidat perbaikan (belum dikerjakan): (a) buang sampah batas halaman di level karakter seperti watermark
    - karakter tidak tegak (label sumbu vertikal) dan baris running header/footer; (b) "neighbor expansion":
    chunk yang terambil dikirim bersama chunk sesudah/sebelumnya - di kasus ini otomatis membawa prosa-2468.
+
+## Biaya nyata (AI Studio > Spend, Default Gemini Project, dilihat 1 Okt 2026 20:09 WIB)
+- Bulan Oktober (reset tanggal 1 waktu Pasifik): IDR 3.503 - mencakup embedding 4.431 chunk buku penuh,
+  uji 100 chunk, dan 6 pertanyaan uji (17_hibrida_penuh.py).
+- Total 28 hari (4 Sep - 1 Okt): Rp 4.730, termasuk pilot 0B tanggal 29 Sep.
+- Kesimpulan: indexing penuh 672 halaman bukan masalah biaya. Kekhawatiran kuota di catatan 0A tidak relevan
+  lagi di project berbayar.
