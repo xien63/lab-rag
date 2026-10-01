@@ -386,3 +386,16 @@ Temuan:
   tidak dikenal ditandai di note. Halaman yang benar untuk Q3: 397-398.
 - Keputusan: gemini-3.8-flash dijadikan model utama, preview jadi cadangan. Perlu satu run ulang keenam
   pertanyaan dengan model yang sama untuk hasil yang sepenuhnya sebanding.
+
+### Run ulang dengan gemini-3.8-flash sebagai model utama (1 Okt 22:00 WIB)
+- Pola 503 TERBALIK: 3.8-flash gagal 503 tiga kali untuk Q1, Q2, Q4, Q5, Q6 (dijawab cadangan preview),
+  tapi langsung berhasil untuk Q3. KOREKSI KEDUA: kesimpulan "kegagalan khusus permintaan Q3" juga tidak
+  bertahan. Yang konsisten dengan semua data: kedua model kelebihan beban secara bergantian malam itu.
+  Pelajaran: jangan menyimpulkan penyebab 503 dari pola satu-dua run.
+- Hasil: 6/6 jawaban benar, 6/6 halaman benar - termasuk Q3 hal 397-398 (parser "excerpt" bekerja).
+  Model campuran (Q3: 3.8-flash, lainnya: preview); setiap jawaban diverifikasi terhadap teks sumber.
+- Yang membuat 6/6 tercapai di bawah server yang tidak stabil: retry + fallback dua model + lewati-saat-
+  gagal. Ini wajib ada di produksi.
+
+VONIS BUKU PENUH: LULUS - 6/6 jawaban dan sitasi halaman benar dengan retrieval hibrida + neighbor expansion.
+Catatan: belum diuji dengan satu model tunggal; set uji masih 6 pertanyaan (perlu 20-30 lintas bab).
