@@ -9,7 +9,7 @@ EMB = BASE / "emb_full.npy"
 EMB_IDS = BASE / "emb_full_ids.json"
 OUT = BASE / "jawaban_tetangga.txt"
 EMB_MODEL = "gemini-embedding-001"
-CHAT_MODELS = ["gemini-3-flash-preview", "gemini-3.8-flash"]
+CHAT_MODELS = ["gemini-3.8-flash", "gemini-3-flash-preview"]  # 1 Okt: model stabil jadi utama; preview sering 503
 TOPK = 5
 K1, B = 1.5, 0.75
 RRF_K = 60
@@ -122,6 +122,9 @@ def ask(prompt):
                         temperature=0,
                         response_mime_type="application/json",
                         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+                        # Diagnosa 19 (1 Okt): JSON + thinking default -> 503 cepat (5-6 dtk) khusus Q3;
+                        # JSON + thinking LOW -> berhasil. Dipakai untuk SEMUA pertanyaan supaya hasil sebanding.
+                        thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),
                     ),
                 )
                 return m, resp.text
@@ -177,7 +180,12 @@ for qi, (qid, q, markers) in enumerate(QUESTIONS):
         ans = json.loads(raw)
     except Exception:
         ans = {"canAnswer": None, "answer": raw, "quote": "", "chunkIds": [], "note": "JSON tidak valid"}
-    pages = sorted({p for cid in ans.get("chunkIds", []) if cid in meta for p in meta[cid]["page"]})
+    # Model kadang menyalin label kutipan ("excerpt prosa-2467") - normalisasi supaya halaman tetap terbaca.
+    ans["chunkIds"] = [re.sub(r"^\s*\[?\s*excerpt\s+", "", str(c), flags=re.I).strip(" ]") for c in (ans.get("chunkIds") or [])]
+    asing = [c for c in ans["chunkIds"] if c not in meta]
+    if asing:
+        ans["note"] = (ans.get("note") or "") + f" [PERINGATAN: chunkIds tidak dikenal {asing}]"
+    pages = sorted({p for cid in ans["chunkIds"] if cid in meta for p in meta[cid]["page"]})
     print(f"{qid}  chunk-emas: {gold_info} | di konteks: {'YA' if emas_di_konteks else 'tidak'} ({len(konteks)} chunk)  | canAnswer={ans.get('canAnswer')}  | hal {pages}")
     blok = [f"\n########## {qid}: {q}", f"model: {model_used}", f"chunk-emas (penanda {markers}): {gold_info}",
             "top-5 gabungan: " + ", ".join(f"{ids[j]}(emb#{re_[j]} bm25#{rb[j]})" for j in top),

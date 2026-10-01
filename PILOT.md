@@ -353,3 +353,36 @@ Temuan:
 - Total 28 hari (4 Sep - 1 Okt): Rp 4.730, termasuk pilot 0B tanggal 29 Sep.
 - Kesimpulan: indexing penuh 672 halaman bukan masalah biaya. Kekhawatiran kuota di catatan 0A tidak relevan
   lagi di project berbayar.
+
+## Neighbor expansion + diagnosa 503 (18_hibrida_tetangga.py, 19_diagnosa_q3.py) - 1 Okt 2026 malam
+- Perbaikan Q3 dipilih: neighbor expansion. Setiap chunk prosa di top-5 dikirim bersama chunk sebelum dan
+  sesudahnya (urutan baca buku). Tabel dikirim apa adanya. Konteks naik dari 5 ke 7-12 chunk.
+  Parameter retrieval TIDAK diubah (top-5, BM25 k1 1.5 b 0.75, RRF k 60).
+- Skrip 18 sempat macet setengah jam: tidak ada batas waktu permintaan. Diperbaiki: batas 60 detik
+  (HttpOptions timeout dalam milidetik, diverifikasi di google-genai 2.25.0), pertanyaan yang gagal
+  dilewati (tidak menghentikan semua), bisa diulang sebagian dengan --hanya Qx.
+- Q3 gagal 503 berulang kali sementara Q1, Q2, Q4-Q6 selalu berhasil di menit yang sama -> bukan beban
+  server acak. Diagnosa 19 (konteks Q3 yang sama, satu perubahan per variasi, preview model):
+  A default (JSON + thinking default) GAGAL 6 dtk | B thinking LOW BERHASIL | C tanpa JSON BERHASIL |
+  D hanya 2 chunk emas GAGAL 5 dtk. Ukuran konteks bukan penyebab. Gagal dalam 5-6 detik = bukan timeout.
+- KOREKSI: kesimpulan "thinking LOW menyelesaikan masalah" terlalu cepat (n=1). Di run berikutnya, preview
+  + thinking LOW tetap 503 tiga kali untuk Q3; jawaban datang dari model cadangan gemini-3.8-flash.
+  Yang terbukti hanya: Q3 tidak stabil di gemini-3-flash-preview. Penyebab di dalam server Google tidak
+  bisa dilihat dari sini.
+
+| | Konteks | Model | Jawaban | Hasil |
+|---|---|---|---|---|
+| Q1 | 7 | preview | Nystatin, hal 400 | LULUS |
+| Q2 | 11 | preview | <= 786 ug/mg creatinine, hal 606 | LULUS |
+| Q3 | 12 | 3.8-flash | 69% Candida sepsis, 36% Candida colonization, 9% bacterial sepsis | LULUS (jawaban); halaman hilang - lihat bawah |
+| Q4 | 8 | preview | menolak HbA1c | LULUS |
+| Q5 | 7 | preview | <= 0.58 ug/mg creatinine, hal 403 | LULUS |
+| Q6 | 11 | preview | <= 3.4 ug/mg creatinine, hal 65-66 | LULUS |
+
+- Jawaban: 6/6 benar. Chunk yang memuat jawaban Q3 sampai ke model hanya karena neighbor expansion
+  (peringkat gabungannya #11, di luar top-5) - perbaikan struktural ini terbukti bekerja.
+- Celah sitasi Q3: gemini-3.8-flash menulis chunkIds sebagai "excerpt prosa-2467" (menyalin label kutipan),
+  sehingga nomor halaman tidak terpetakan. Diperbaiki di parser: awalan "excerpt" dibuang, chunkIds yang
+  tidak dikenal ditandai di note. Halaman yang benar untuk Q3: 397-398.
+- Keputusan: gemini-3.8-flash dijadikan model utama, preview jadi cadangan. Perlu satu run ulang keenam
+  pertanyaan dengan model yang sama untuk hasil yang sepenuhnya sebanding.
