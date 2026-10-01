@@ -314,3 +314,35 @@ Dijalankan di workspace cloud (bukan di laptop), hasil dikirim ke full/ (di-giti
 - Bisa dilanjutkan: progres disimpan per 50 chunk ke full/emb_full.npy + emb_full_ids.json.
 - Perkiraan ~0,94 juta token (karakter/4). Harga tidak bisa diverifikasi dari halaman harga saat ini,
   jadi biaya diukur langsung: jalankan --batas 100 dulu, cek Spend di AI Studio, baru lanjut.
+
+## Uji retrieval di buku penuh (17_hibrida_penuh.py) - 1 Okt 2026
+- Embedding 4.431 chunk selesai dalam 174 detik (Tier 1, tanpa 429, tanpa error).
+- Pertanyaan disesuaikan untuk skala penuh SEBELUM hasil keluar:
+  - Q4 lama (methylmalonate) ternyata ADA di buku penuh (59 kemunculan; <= 3.4 ug/mg creatinine, hal 66)
+    -> dipindah jadi Q6 yang WAJIB DIJAWAB.
+  - Q4 baru: HbA1c. Tidak ada rentang di seluruh buku; "haemoglobin A1c" hanya muncul di judul artikel
+    daftar pustaka (hal 590-591) -> WAJIB DITOLAK.
+- Parameter sama dengan pilot (top-5, BM25 k1 1.5 b 0.75, RRF k 60).
+
+| | Peringkat chunk jawaban (gabungan) | Jawaban | Hasil |
+|---|---|---|---|
+| Q1 Nystatin | #1 | Nystatin, hal 400 | LULUS |
+| Q2 Hippurate | #4 | <= 786 ug/mg creatinine, hal 606 (satuan memang tercetak di hal 606) | LULUS |
+| Q3 D-arabinitol | #11 | menolak: "kalimat terpotong, persentase dan kelompok tidak lengkap" | GAGAL retrieval, penolakan aman |
+| Q4 HbA1c | - | menolak; tidak terkecoh rentang hemoglobin total 120-150 g/L di kutipan | LULUS |
+| Q5 a-ketoisocaproate | #2 | <= 0.58 ug/mg creatinine, hal 403 dan 65 | LULUS |
+| Q6 Methylmalonate | #2 | <= 3.4 ug/mg creatinine, hal 66 | LULUS |
+
+VONIS: 5/6. Belum lulus penuh karena Q3.
+
+Temuan:
+1. Q4 lama -> Q6: pertanyaan yang SAMA ditolak di pilot (tidak ada di sumber) dan dijawab benar dengan halaman
+   di buku penuh. Bukti bahwa jawaban mengikuti isi indeks, bukan ingatan model.
+2. Mekanisme kegagalan Q3 teridentifikasi persis: di antara dua belahan kalimat ("...reported in 69, 36," |
+   "and 9% of patients with Candida sepsis...") ada ~250 karakter sampah batas halaman: footer "387", angka
+   sumbu chart (25 20 15 10 5 0), keterangan gambar, label sumbu vertikal terbaca terbalik
+   ("noitalumits emyzne mureS"), running header "Chapter 6". Overlap 200 karakter habis untuk sampah itu.
+   Chunk belahan pertama (prosa-2467) justru masuk top-5 (#2).
+3. Kandidat perbaikan (belum dikerjakan): (a) buang sampah batas halaman di level karakter seperti watermark
+   - karakter tidak tegak (label sumbu vertikal) dan baris running header/footer; (b) "neighbor expansion":
+   chunk yang terambil dikirim bersama chunk sesudah/sebelumnya - di kasus ini otomatis membawa prosa-2468.
