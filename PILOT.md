@@ -268,3 +268,49 @@ dengan maxIterations = 3 di agent support).
 - 13_hibrida.py - jawaban model, retrieval hibrida (BM25 + embedding, RRF)
 - Output (chunks, embedding, retrieval.txt, jawaban*.txt) ada di pilot/,
   sengaja tidak di-commit karena berisi teks buku berhak cipta.
+
+---
+
+# Pipeline buku penuh - 672 halaman (1 Okt 2026)
+
+Dijalankan di workspace cloud (bukan di laptop), hasil dikirim ke full/ (di-gitignore).
+
+## Ekstraksi (14_ekstrak_penuh.py)
+- pdfplumber 0.11.10 + pypdf 6.19.0 (versi disamakan dengan laptop). 672 halaman dalam 73 detik (2 proses).
+- Bukti kesetaraan dengan laptop: sebelum filter watermark, teks 27/27 halaman pilot dan 64/64 tabel pilot
+  IDENTIK dengan hasil laptop. Semua verifikasi pilot berlaku untuk ekstraksi ini.
+- Semua halaman punya lapisan teks. 26 halaman < 300 karakter = halaman judul bab / kosong. Tidak perlu OCR.
+
+## Watermark dibuang di level karakter
+- Watermark "Genova Diagnostics" (sumber huruf nyasar sejak 0A) = 18 karakter Helvetica > 40 pt,
+  IDENTIK di ke-672 halaman. Isi buku tidak pernah memakai Helvetica > 40 pt
+  (Helvetica kecil hanya di hal 467, 79 karakter, ukuran <= 40 - tidak tersentuh).
+- Filter: page.filter() membuang char Helvetica dengan size > 40, SEBELUM teks dirangkai.
+- Bukti: di semua 672 halaman yang terbuang tepat 17 huruf G-e-n-o-v-a-D-i-a-g-n-o-s-t-i-c-s, tidak ada
+  digit yang berubah di halaman mana pun, tidak ada huruf baru. Total 19.067 karakter terbuang.
+- Kenapa penting: watermark ternyata menyusup ke TENGAH kata ("Hydrovxyphenylacetate", "Elemnents",
+  "Pharmsaceutical") - merusak pencarian kata kunci yang jadi penyelamat Q3. Sekarang utuh.
+  Regex tidak mungkin memperbaikinya; filter posisi/font bisa, dan terbukti.
+
+## Chunking (15_chunk_penuh.py) - logika sama dengan 07 + 09
+- 524 tabel terdeteksi -> 202 kosong dibuang, 7 dibuang karena pola tabel-036, 315 disimpan.
+- 4.116 chunk prosa (868 melintasi 2 halaman). TOTAL 4.431 chunk, 3,77 juta karakter.
+- Detektor pola tabel-036: >= 3 baris berturut-turut berisi rentang saja tanpa nama analit.
+  Di halaman pilot menandai tepat 1 tabel (tabel-036 lama, kini tabel-0324) dan 0 tabel sehat.
+  Di seluruh buku menandai 7; semua diperiksa manual dan semuanya benar bermasalah:
+  0324 (405), 0105 (153, uji tantang logam berat), 0051+0092 (150-151, kolom rentang terduplikasi;
+  hal 150 juga tertimpa keterangan gambar), 0169 (159), 0195 (190), 0418 (535) = potongan rentang tanpa nama.
+  Untuk 150, 151, 153, 159, 405, 535: prosa halaman yang sama memasangkan analit-rentang dengan benar.
+- Selisih pilot: di hal 380-406 sekarang 19 tabel (pilot 21). Dua yang hilang (tabel-033, tabel-063 pilot)
+  isinya hanya satu huruf watermark ("v", "c") -> kosong setelah filter. Bukan kehilangan data.
+
+## Celah yang diketahui
+- Hal 190: angka rentang (19-153, 303-626, 42-130, 53-101, 37-98) tidak terpasang dengan nama analit di teks
+  maupun tabel. Perlu cek visual halaman itu.
+- Ukuran chunk terbesar 5.873 karakter (tabel-0101, hal 153). Embedding memakai 5.000 karakter pertama untuk
+  chunk > 5.000 (hanya chunk ini); teks lengkap tetap tersimpan dan tetap terindeks kata kunci.
+
+## Embedding (16_embed_penuh.py) - dijalankan di laptop
+- Bisa dilanjutkan: progres disimpan per 50 chunk ke full/emb_full.npy + emb_full_ids.json.
+- Perkiraan ~0,94 juta token (karakter/4). Harga tidak bisa diverifikasi dari halaman harga saat ini,
+  jadi biaya diukur langsung: jalankan --batas 100 dulu, cek Spend di AI Studio, baru lanjut.

@@ -1,4 +1,5 @@
-﻿source.pdf
+source.pdf
 *.pdf
 pilot/
+full/
 __pycache__/
