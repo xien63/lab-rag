@@ -399,3 +399,64 @@ Temuan:
 
 VONIS BUKU PENUH: LULUS - 6/6 jawaban dan sitasi halaman benar dengan retrieval hibrida + neighbor expansion.
 Catatan: belum diuji dengan satu model tunggal; set uji masih 6 pertanyaan (perlu 20-30 lintas bab).
+
+---
+
+# Uji 30 pertanyaan lintas bab + indeks per baris (1-2 Okt 2026)
+
+## Set uji (20_set_uji.py -> set_uji.json, dikunci SHA-256 di 21/23)
+- 30 pertanyaan: bab 1-12 + lampiran A/B/C; 26 punya jawaban, 4 harus menolak (HbA1c, procalcitonin [Indonesia],
+  AMH, glyphosate). Tipe: tabel 16, narasi 1, nama-mirip 2, lintas-halaman 1, angka-dari-gambar 1, Indonesia 3,
+  regresi 2, menolak 4. Kunci diverifikasi terhadap teks sumber SEBELUM model melihat apa pun.
+- v2 (koreksi KUNCI, bukan kelonggaran): uji v1 menunjukkan model menyitir hal 65 untuk lipid peroxide yang
+  memang mencetak <= 2.0 tetapi tidak saya daftarkan. Audit seluruh halaman menemukan: methylmalonate punya
+  batas lain di hal 614 (<= 3.0); arginine 42-130 juga di hal 261-264; histidin 19-102 juga di hal 260;
+  hal 510 mencetak batas lipid peroxide urin yang berbeda (<= 40.0 nM/mg creatinine).
+  PELAJARAN: satu analit bisa punya 2-3 batas referensi menurut spesimen/laporan lab -> jawaban produksi harus
+  menyebut spesimen + halaman, bukan hanya angka.
+- Pengelompokan hasil: LULUS / LULUS_HAL_SALAH / MENOLAK_AMAN / PERIKSA / HALUSINASI.
+
+## Hasil varian A (hibrida + neighbor expansion, 21_uji_set.py)
+- 28/30 LULUS, 2 MENOLAK_AMAN, 0 PERIKSA, 0 HALUSINASI; 4/4 pertanyaan "harus menolak" benar; 3/3 Indonesia lulus.
+- Dua kegagalan, satu akar: U12 (quinolinate <= 16.5, hal 403) dan U16 (D-lactate <= 11.0, hal 467). Batas itu hanya
+  tercetak sebagai SATU BARIS di laporan lab contoh; potongan jawabannya kalah (#15 dan #11) oleh prosa yang
+  banyak menyebut nama analit. Model menolak dengan jujur, tidak mengarang. Penyebab tambahan: tokenizer BM25
+  memecah "D-lactate" menjadi "d"+"lactate" lalu membuang "d" (< 2 karakter).
+- Catatan: angka ini batas milik satu laboratorium (Genova) yang dicetak di laporan contoh, bukan standar umum.
+
+## Perbaikan: indeks per baris (small-to-big) - 22_simpan_qemb.py, 23_uji_baris.py
+- Baris yang memuat batas/rentang (<=, >=, <, >, a-b) + sebuah nama dijadikan entri BM25 sendiri (tokenizer
+  mempertahankan kata bertanda hubung: d-lactate, 25-hydroxyvitamin); yang dikirim ke model tetap chunk induk
+  utuh. Dibuang: baris sitasi pustaka, halaman indeks buku (>= 649), kata tanya umum dari kueri baris.
+  Hasil: 2.605 baris dari 685 chunk.
+- Simulasi offline dengan embedding pertanyaan asli (tanpa model jawaban; varian A cocok dengan uji nyata untuk
+  25 dari 26 pertanyaan; U19 = hal 65 vs hal 535 setelah koreksi kunci):
+  A konteks 24/26 | B (baris bobot penuh) 24/26, DITOLAK - menjatuhkan U03 (Indonesia) dan U24 |
+  C (A + 2 chunk induk dari baris) 26/26, teks +19% | D (baris jadi daftar ketiga di RRF, bobot 0.5) 26/26, teks -7%.
+- Aturan pemenang ditetapkan SEBELUM melihat hasil jawaban: (1) PERIKSA/HALUSINASI = gugur, (2) LULUS terbanyak,
+  (3) seri -> teks lebih pendek.
+
+## Hasil C dan D (23_uji_baris.py)
+- Putaran 1: C 28/30, D 28/30 (U12 dan U16 diperbaiki di keduanya).
+- Kegagalan tersisa BUKAN pencarian: gemini-3.8-flash kadang menulis JSON rusak (`"canAnswer": trueInfo`) yang
+  dulu tercatat sebagai penolakan (C: U18, U21; D: U14) - isi jawabannya benar. Perbaikan alat uji: ulang sekali
+  di model yang sama lalu pindah model (dipasang di 21 dan 23, dites dengan model tiruan).
+- Satu kegagalan D lain, U19 (menolak), awalnya saya baca sebagai kelemahan pencarian. Pada pengulangan U19
+  LULUS dengan peringkat dan sitasi (hal 65) yang sama -> KOREKSI: lebih mungkin variasi model, bukan pencarian.
+  Prediksi saya "U19 di D akan tetap gagal" salah. Risiko konteks serum/urin di D tetap ada tetapi belum terbukti.
+- Setelah mengulang pertanyaan terdampak: C 30/30, D 30/30; 0 halusinasi, 0 PERIKSA keduanya.
+- VONIS: pemenang D (aturan 3: teks rata-rata 7.927 vs 10.096 karakter). D menjadi pipeline utama.
+
+## Keterbatasan (jujur)
+- Set uji ikut membentuk perbaikan: U12/U16 memicu indeks baris lalu diukur pada pertanyaan yang sama. 30/30 BUKAN
+  uji buta -> perlu set uji kedua yang belum pernah dilihat.
+- Skor akhir gabungan beberapa putaran (hanya pertanyaan yang gagal diulang; perlakuan sama untuk C dan D).
+  Satu putaran per pertanyaan belum cukup membedakan "pencarian salah" dari "model tidak konsisten".
+- Biaya: kurang dari Rp 5.000 untuk seluruh rangkaian uji hari ini (perkiraan; belum dicek di Spend).
+
+## Langkah berikutnya (urutan yang disarankan)
+1. Set uji kedua (20-30 pertanyaan baru, banyak tipe "satu baris laporan lab", Indonesia, beda spesimen).
+2. Uji stabilitas: 30 pertanyaan x 3 putaran penuh di D.
+3. response_schema (JSON wajib) menggantikan retry-on-invalid.
+4. Jawaban wajib menyebut spesimen/lab/halaman.
+5. Desain produksi: penyimpanan hibrida, antarmuka Fitsol, pertanyaan Indonesia sungguhan.
