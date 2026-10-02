@@ -1,4 +1,12 @@
-"""Uji set lintas bab (set_uji.json, dikunci SHA-256) dengan pipeline 18: hibrida BM25+embedding (RRF) + perluasan tetangga.
+"""Uji set lintas bab dengan INDEKS PER BARIS (varian C atau D) - pembanding untuk 21_uji_set.py (varian A).
+
+Indeks baris: setiap baris yang memuat batas/rentang (<=, >=, <, >, a-b) dan sebuah nama dijadikan entri
+BM25 sendiri (tokenizer mempertahankan kata bertanda hubung: d-lactate, 25-hydroxyvitamin), menunjuk ke
+chunk induknya. Yang dikirim ke model tetap chunk utuh. Baris sitasi pustaka & halaman indeks buku (>=649)
+dibuang; kata tanya/umum (reference, limit, urinary, ...) dibuang dari kueri baris.
+  Varian C: 5 teratas hibrida seperti 21 + sisipan 2 chunk induk teratas dari indeks baris.
+  Varian D: indeks baris jadi daftar ketiga di RRF dengan bobot 0.5.
+Simulasi offline 1 Okt (embedding asli): A konteks 24/26, C 26/26 (+19% teks), D 26/26 (-7% teks).
 
 Penilaian otomatis per pertanyaan:
   LULUS            jawaban memuat semua grup kunci DAN menyitir halaman yang sah
@@ -9,10 +17,10 @@ Penilaian otomatis per pertanyaan:
   (pertanyaan 'menolak' yang ditolak = LULUS)
 
 Pakai:
-  python 21_uji_set.py                 # semua pertanyaan (hasil lama yang sudah ada ditimpa)
-  python 21_uji_set.py --hanya U03,U17 # ulang sebagian saja
-  python 21_uji_set.py --ringkas       # hanya cetak ringkasan dari hasil tersimpan, tanpa memanggil API
-  python 21_uji_set.py --nilai-ulang   # nilai ulang jawaban tersimpan dengan kunci terbaru, tanpa memanggil API
+  python 23_uji_baris.py --varian D                  # semua pertanyaan
+  python 23_uji_baris.py --varian C --hanya U03,U17  # ulang sebagian
+  python 23_uji_baris.py --varian D --ringkas        # ringkasan tersimpan, tanpa API
+  python 23_uji_baris.py --varian D --nilai-ulang    # nilai ulang dengan kunci terbaru, tanpa API
 """
 import json, os, sys, pathlib, re, math, collections, hashlib, time
 import numpy as np
@@ -21,8 +29,13 @@ ROOT = pathlib.Path(os.environ.get("LAB_RAG_ROOT", r"C:\Users\sandy\dev\lab-rag"
 BASE = ROOT / "full"
 SET_FILE = ROOT / "set_uji.json"
 SHA_KUNCI = "c1eb2aead6a7ded75cc98cf9dc975a3d6bcaa5ad0be0b78f389f5d0bfb676b62"  # set_uji v2 (lihat RIWAYAT VERSI di 20_set_uji.py)
-HASIL = BASE / "hasil_uji.json"
-LAPORAN = BASE / "hasil_uji.txt"
+VARIAN = sys.argv[sys.argv.index("--varian") + 1].upper() if "--varian" in sys.argv else None
+if VARIAN not in ("C", "D"):
+    raise SystemExit("wajib: --varian C atau --varian D")
+HASIL = BASE / f"hasil_uji_{VARIAN}.json"
+LAPORAN = BASE / f"hasil_uji_{VARIAN}.txt"
+BOBOT_BARIS = 0.5   # varian D
+SISIP_BARIS = 2     # varian C
 EMB_MODEL = "gemini-embedding-001"
 CHAT_MODELS = ["gemini-3.8-flash", "gemini-3-flash-preview"]
 TOPK = 5
@@ -177,6 +190,53 @@ def bm25(q):
         out.append(sc)
     return out
 
+def tok_baris(s):
+    s = s.lower().translate(GREEK)
+    out = []
+    for t in re.split(r"[^a-z0-9.%\-]+", s):
+        t = t.strip("-.")
+        if not t:
+            continue
+        if "-" in t:
+            out.append(t)
+            out += [p for p in t.split("-") if len(p) >= 2]
+        elif len(t) >= 2:
+            out.append(t)
+    return out
+
+REF = re.compile(r"(<=|>=|=>|=<|\u2264|\u2265|<|>)\s*\d|\d\s*[-\u2013]\s*\d")
+SITASI = re.compile(r"\d{4};|;\s*\d{4}|et al|\.{5,}|\d{4}\)|, \d+[\u2013-]\d+(\(|,|$)|J Clin|Am J|Clin Chem")
+STOP = set("what which is are the of for in a an and to by does do how much reference range ranges limit limits interval "
+           "value values level levels normal urinary urine serum plasma blood listed considered indicates indicate adult "
+           "adults during with as at on its it this that from be book according".split())
+baris = [(j, ln.strip()) for j, t in enumerate(texts) for ln in t.split("\n")
+         if REF.search(ln) and re.search(r"[A-Za-z]{3,}", ln) and not SITASI.search(ln) and min(meta[ids[j]]["page"]) < 649]
+bdocs = [tok_baris(l) for _, l in baris]
+bN = len(bdocs)
+bavg = sum(len(d) for d in bdocs) / bN
+bdf = collections.Counter(w for d in bdocs for w in set(d))
+btfs = [collections.Counter(d) for d in bdocs]
+print(f"indeks baris: {bN} baris dari {len(set(j for j, _ in baris))} chunk")
+
+def induk_dari_baris(q):
+    qt = [w for w in tok_baris(q) if w not in STOP]
+    sc = [0.0] * bN
+    for w in qt:
+        if w not in bdf:
+            continue
+        idf = math.log(1 + (bN - bdf[w] + 0.5) / (bdf[w] + 0.5))
+        for i in range(bN):
+            f = btfs[i].get(w, 0)
+            if f:
+                sc[i] += idf * f * (K1 + 1) / (f + K1 * (1 - B + B * len(bdocs[i]) / bavg))
+    urut = []
+    for k in sorted(range(bN), key=lambda k: -sc[k]):
+        if sc[k] <= 0:
+            break
+        if baris[k][0] not in urut:
+            urut.append(baris[k][0])
+    return urut
+
 prosa_urut = sorted((c for c in ids if c.startswith("prosa-")), key=lambda x: int(x.split("-")[1]))
 tetangga = {}
 for k, cid in enumerate(prosa_urut):
@@ -243,6 +303,10 @@ for qi, u in enumerate(JALAN):
     bm_order = sorted(range(N), key=lambda j: -b[j])
     re_, rb = ranks(emb_order), ranks(bm_order)
     fused = {j: 1 / (RRF_K + re_[j]) + 1 / (RRF_K + rb[j]) for j in range(N)}
+    induk = induk_dari_baris(q)
+    if VARIAN == "D":
+        for r_, j in enumerate(induk, 1):
+            fused[j] += BOBOT_BARIS / (RRF_K + r_)
     order = sorted(range(N), key=lambda j: -fused[j])
     rord = ranks(order)
     emas = set()
@@ -251,6 +315,10 @@ for qi, u in enumerate(JALAN):
     rank_emas = min((rord[j] for j in emas), default=None)
     top = order[:TOPK]
     konteks = perluas(top)
+    if VARIAN == "C":
+        for j in induk[:SISIP_BARIS]:
+            if j not in konteks:
+                konteks.append(j)
     emas_di_konteks = bool(emas & set(konteks))
     ctx = [f"[excerpt {ids[j]} | PDF pages {meta[ids[j]]['page']}]\n{texts[j]}" for j in konteks]
     prompt = "Question: " + q + "\n\nExcerpts:\n\n" + "\n\n".join(ctx)
@@ -278,5 +346,5 @@ for qi, u in enumerate(JALAN):
 
 print(tulis_laporan(hasil))
 if dilewati:
-    print("DILEWATI:", ",".join(dilewati), "-> jalankan lagi: python 21_uji_set.py --hanya " + ",".join(dilewati))
-print("detail: full\\hasil_uji.txt")
+    print("DILEWATI:", ",".join(dilewati), "-> jalankan lagi: python 23_uji_baris.py --varian " + VARIAN + " --hanya " + ",".join(dilewati))
+print(f"detail: full\\hasil_uji_{VARIAN}.txt")
