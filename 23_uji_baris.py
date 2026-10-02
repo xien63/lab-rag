@@ -33,7 +33,7 @@ BASE = ROOT / "full"
 SETNAME = sys.argv[sys.argv.index("--set") + 1].lower() if "--set" in sys.argv else "uji"
 SHA_SET = {
     "uji": "c1eb2aead6a7ded75cc98cf9dc975a3d6bcaa5ad0be0b78f389f5d0bfb676b62",   # set_uji v2 (lihat RIWAYAT VERSI di 20_set_uji.py)
-    "buta": "36f92d2250ed58501043f6b7172fb7f20c211d93b234411347948d643cda6e94",   # set_buta (25_set_buta.py), 2 Okt 2026
+    "buta": "ca288790faeb29c6d9187cc741a99afbcd6a8bce5f0a47014354d18afb932a30",   # set_buta v2 (koreksi kunci B16; v1 = 36f92d22...6e94, lihat RIWAYAT VERSI di 25_set_buta.py)
 }
 if SETNAME not in SHA_SET:
     raise SystemExit("--set harus 'uji' atau 'buta'")

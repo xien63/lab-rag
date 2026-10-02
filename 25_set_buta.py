@@ -11,6 +11,16 @@ Pakai:  python 25_set_buta.py full            # validasi + audit halaman lain
 Catatan audit sebelum dikunci (2 Okt): B03 indican 115 (panel asam organik, hal 405-406) vs 124 (profil GI, hal 467) -> pertanyaan
 menyebut profil GI. B12 magnesium 28-100 di hal 154 adalah profil rambut -> pertanyaan menyebut sel darah merah. B17 taurine blood
 spot 138-355 (hal 197) vs 133-355 (hal 260). B26 lithium dibahas (hal 128) tetapi tanpa batas referensi tercetak.
+
+RIWAYAT VERSI
+  v1 (2 Okt 2026, sha 36f92d22...6e94): versi awal, dipakai untuk uji C dan D (1 putaran) dan C (3 putaran).
+  v2 (2 Okt 2026): koreksi KUNCI B16, BUKAN kelonggaran untuk model. Hasil uji v1 menunjukkan model menyitir hal 102, yang
+      mencetak tabel acuan "Ferritin Male 12-300 / Female 10-150 ng/mL" (Tabel 3.6). Audit v1 melewatkannya karena nama analit
+      dan angka ada di baris terpisah pada tata letak itu. Perubahan: halaman + [102]; alternatif kunci + "12-300", "10-150"
+      (nilai tercetak di hal 102). Hal 101 (ambang tahap defisiensi: >300, >150, 20, <10) sengaja TIDAK ditambahkan karena
+      bukan batas referensi. Pertanyaan tidak diubah satu kata pun. Audit ulang seluruh halaman untuk 21 soal berjawab
+      lainnya (jendela 3 baris) tidak menemukan halaman sah lain; kandidat yang muncul adalah baris campuran dua kolom,
+      dosis (mg/hari), profil rambut/plasma, atau ambang tahap.
 """
 import json, re, sys, hashlib, pathlib
 
@@ -59,7 +69,7 @@ SET = [
  dict(id="B15", bab="6", tipe="multi-nilai", analit="pyroglutamate", q="What is the reference limit for pyroglutamate?",
       kunci=[["95", "72", "80"]], halaman=[404, 547, 614], emas=["pyroglutamate", "95"]),
  dict(id="B16", bab="3", tipe="multi-nilai", analit="ferritin", q="What is the reference range for serum ferritin?",
-      kunci=[["40", "28"]], halaman=[155, 156], emas=["ferritin", "40"]),
+      kunci=[["40", "28", "12-300", "10-150"]], halaman=[102, 155, 156], emas=["ferritin", "40"]),  # v2: + hal 102
  dict(id="B17", bab="4", tipe="spesimen", analit="taurine", q="What is the blood spot reference range for taurine?",
       kunci=[["138", "133"], ["355"]], halaman=[197, 260], emas=["taurine", "138"]),  # hal 260 (kasus blood spot) mencetak 133-355
  # ---- narasi / tabel (EN + Indonesia)

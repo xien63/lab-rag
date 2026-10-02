@@ -536,8 +536,25 @@ Hipotesis DITOLAK. Perbaikan tidak diterapkan. Menambahkan "profile/risk/cardiov
 Catatan: ukuran "gold di 2 induk teratas" hanya 19/48 karena indeks baris sengaja hanya pelengkap; konteks akhir juga memakai 5 teratas hibrida (emas di konteks C: 20/22 pada set buta).
 
 ### Langkah berikutnya (belum dikerjakan)
-1. Putar C di set buta 2 putaran lagi (stabilitas pada data yang belum dipakai merancang apa pun).
-2. Koreksi kunci B16 (tambah hal 102) sebagai versi 2 set buta; tulis riwayat versi seperti 20_set_uji.py.
+1. SELESAI (lihat bagian di bawah): stabilitas C di set buta, 3 putaran.
+2. SELESAI (lihat bagian di bawah): kunci B16 dikoreksi, set buta v2.
 3. Prompt: jawaban dengan batas ganda harus menyebut semua nilai beserta spesimen/halaman, bukan menolak (B13).
 4. Pertanyaan Indonesia: pertimbangkan penerjemahan kueri ke Inggris sebelum pencarian baris (menambah 1 panggilan model).
 5. Pertimbangkan 3 induk sisipan (bukan 2) untuk kasus baris kembar seperti B09; uji di kedua set.
+
+### Stabilitas C di set buta (3 putaran, 2 Okt 2026)
+Skor per putaran: 24, 25, 25 dari 26. Stabil 25/26. 0 halusinasi, 0 PERIKSA. Kriteria (0 halusinasi, <=2 tidak stabil) terpenuhi.
+- Satu-satunya yang berubah: B16 (LULUS_HAL_SALAH -> LULUS -> LULUS); model mulai juga menyitir hal 155-156 selain hal 102. Ini mengonfirmasi bahwa kunci B16 perlu halaman 102.
+- B09 MENOLAK_AMAN di ketiga putaran dengan konteks identik (konteks identik antar putaran untuk 26 soal) -> kegagalan retrieval konsisten, bukan perilaku model.
+- Angka tambahan pada soal yang sama-sama LULUS diverifikasi ke sumber: B06 "1.7-20.9" ada di hal 467 (persentil); B21 "195 anak" ada di hal 490.
+- Model cadangan menjawab 6, 4, 6 soal per putaran; B16 p3 dijawab model cadangan dan tetap menyebut semua rentang.
+Ringkasan C di dua set: set uji 30/30 stabil 30/30; set buta 24/25/25 dari 26, stabil 25/26; 0 halusinasi di keduanya.
+Catatan: kesimpulan B09 (sisipan induk ke-3) belum diuji; satu soal tidak cukup sebagai dasar mengubah desain. Tunggu kasus sejenis dari pertanyaan pengguna nyata.
+
+### Set buta v2: koreksi kunci B16 (2 Okt 2026)
+SHA-256 set_buta.json v2: ca288790faeb29c6d9187cc741a99afbcd6a8bce5f0a47014354d18afb932a30 (v1: 36f92d22...6e94). Hanya B16 yang berubah; pertanyaan tidak diubah.
+- Halaman: [155,156] -> [102,155,156]. Alternatif kunci: + "12-300", "10-150" (Tabel 3.6, hal 102: Ferritin laki-laki 12-300, perempuan 10-150 ng/mL).
+- Ini koreksi kunci setelah hasil terlihat. Dicatat terbuka: pelebaran hanya ke nilai/halaman yang tercetak di sumber, bukan kelonggaran untuk model. Hal 101 (ambang tahap defisiensi) sengaja tidak ditambahkan.
+- Penyebab audit v1 melewatkannya: nama analit dan angka ada di baris terpisah pada tata letak tabel itu; audit berbasis satu baris tidak menangkapnya. Audit ulang dengan jendela 3 baris untuk 21 soal berjawab lain: tidak ada halaman sah tambahan (kandidat yang muncul: baris campuran dua kolom, dosis mg/hari, profil rambut/plasma, ambang tahap).
+- Dampak penilaian ulang: C putaran 1 B16 LULUS_HAL_SALAH -> LULUS (kutipan hal 102 sah di v2). Putaran 2, 3 dan D tetap LULUS. Skor C set buta menjadi 25, 25, 25 dari 26 (satu-satunya kegagalan: B09 di tiga putaran); D 23 dari 26. Ringkasan di berkas hasil lama masih menunjukkan angka v1 sampai --nilai-ulang dijalankan.
+- 23_uji_baris.py kini memuat SHA v2 untuk --set buta (penjagaan SHA memeriksa berkas set, jadi cocok dengan set_buta.json v2). Hasil lama bisa dinilai ulang tanpa API: python 23_uji_baris.py --varian C --set buta --nilai-ulang (tambahkan --putaran N untuk berkas putaran). Nilai ulang hanya mengubah B16.
