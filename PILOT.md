@@ -460,3 +460,84 @@ Catatan: belum diuji dengan satu model tunggal; set uji masih 6 pertanyaan (perl
 3. response_schema (JSON wajib) menggantikan retry-on-invalid.
 4. Jawaban wajib menyebut spesimen/lab/halaman.
 5. Desain produksi: penyimpanan hibrida, antarmuka Fitsol, pertanyaan Indonesia sungguhan.
+
+---
+
+# Uji stabilitas varian D: 3 putaran penuh (2 Okt 2026, 24_stabilitas.py)
+
+- Hasil: tiap putaran 29 LULUS + 1 MENOLAK_AMAN (putaran 1-3: 29/30, 29/30, 29/30). 0 HALUSINASI di semua putaran.
+  Stabil (nilai sama di 3 putaran): 28/30. Tidak stabil: U08 (MENOLAK -> LULUS -> LULUS) dan U19 (LULUS -> MENOLAK -> MENOLAK).
+- KOREKSI atas bagian sebelumnya: angka "D 30/30" adalah gabungan beberapa putaran yang pertanyaan gagalnya diulang.
+  Angka yang jujur untuk satu putaran bersih: 29/30 (96,7%), konsisten di tiga putaran.
+- Konteks yang dikirim ke model IDENTIK di ketiga putaran untuk semua pertanyaan yang diperiksa (U03, U04, U08, U09, U11,
+  U19) -> ketidakstabilan murni perilaku model, bukan pencarian. Ini juga menegaskan koreksi sebelumnya soal U19.
+- U08 (arginine): putaran 1 dijawab model cadangan (gemini-3-flash-preview) yang menolak karena menemukan beberapa rentang
+  (42-130 di Tabel 4.7; 35-160 di Tabel 12.13; 50-160 di profil contoh). 3.8-flash memilih 42-130 (jawaban kunci).
+  Setiap putaran: 25 pertanyaan dijawab 3.8-flash, 5 oleh preview (fallback saat 503).
+- U19 (lipid peroxide urin): 2 dari 3 putaran menolak, dengan alasan yang masuk akal secara teks: tabel yang memuat
+  "<= 2.0" bersatuan ug/mg creatinine tidak menulis kata "urinary", sedangkan konteks juga memuat versi serum (<= 0.9 umol/ml
+  dan <= 2.0 nmol/mL). Ini bukan bug model; ini batasan nyata teks sumber. Kunci tidak diubah (menjaga integritas set uji);
+  catat sebagai kasus ambigu.
+- Angka berbeda pada jawaban yang sama-sama LULUS: setelah membuang nomor tabel dan persen dari perbandingan, tinggal U03:
+  satu putaran menambahkan "> 220 nmol/L" - angka ini DIVERIFIKASI ada di sumber (hal 53, "intoksikasi ... > 220 nmol/L").
+  Jadi tambahan konteks yang benar, bukan karangan. U04 (methylmalonate): semua putaran menyebut 3.4 dan 3.0 dengan
+  urutan berbeda - perilaku yang diinginkan.
+- Aturan baca yang ditetapkan sebelum hasil: tidak ada halusinasi + ketidakstabilan <= 2 pertanyaan = "stabil cukup baik".
+  Terpenuhi (0 halusinasi, 2 tidak stabil). Catatan: stabilitas varian C belum diukur; pemilihan D atas C didasarkan
+  pada aturan seri (teks lebih pendek), padahal U19 di D terlihat lemah (1/3). Perlu 3 putaran C untuk perbandingan adil.
+
+## Implikasi desain produksi
+1. Jawaban multi-nilai: bila teks memuat beberapa batas untuk analit yang sama, jawaban harus MENYEBUT SEMUANYA dengan
+   spesimen/tabel/halaman, bukan memilih satu atau menolak (U04 sudah berperilaku begini; U08 oleh preview menolak).
+2. Model cadangan berperilaku berbeda dari model utama pada kasus konflik -> catat model yang menjawab di setiap respons.
+3. response_schema (JSON wajib), serta kata "specimen" sebagai kolom terstruktur bila dapat ditentukan dari teks.
+
+---
+
+## Stabilitas varian C, set uji buta, dan keputusan varian (2 Okt 2026)
+
+### Stabilitas C (set uji 30 soal, 3 putaran)
+LULUS 30/30 di ketiga putaran, stabil 30/30, 0 halusinasi, 0 PERIKSA. Pembanding D: 29/30 per putaran, 28/30 stabil.
+Catatan: U15 dan U23 LULUS di semua putaran tetapi angka di jawaban berbeda (U15: "163" muncul di putaran 2-3; U23: "12" di putaran 2-3). Belum dibaca manual.
+
+### Set uji buta (set_buta.json, 26 soal B01-B26, SHA 36f92d22...6e94)
+Dibuat SETELAH varian D dipilih; tidak satu pun dipakai untuk merancang indeks baris. 1 putaran per varian.
+Aturan pembacaan ditetapkan sebelum hasil terlihat: (1) PERIKSA/HALUSINASI = tersingkir; (2) skor putaran 1 tertinggi menang; (3) seri -> lebih stabil; (4) seri lagi -> konteks lebih pendek; (5) kegagalan diklasifikasi satu per satu, skor tidak diubah.
+
+| | C | D |
+|---|---|---|
+| LULUS | 24 | 23 |
+| LULUS_HAL_SALAH | 1 (B16) | 0 |
+| MENOLAK_AMAN | 1 (B09) | 3 (B13, B18, B19) |
+| Halusinasi / PERIKSA | 0 / 0 | 0 / 0 |
+| baris-laporan | 10/11 | 11/11 |
+| indonesia | 3/3 | 1/3 |
+| rata-rata chunk di konteks | 11,6 | 10,0 |
+
+Prediksi saya sebelum hasil: 20-24 dari 26. C 24 = ujung atas.
+
+Klasifikasi kegagalan:
+- B16 (C): kesalahan KUNCI. Jawaban benar dan lengkap (12-300 / 10-150, 40-200, 28-397), menyitir hal 102 yang memang mencetak tabel ferritin. Kunci hanya mendaftarkan hal 155-156. Skor tidak diubah; kunci perlu dikoreksi di versi berikutnya (pola yang sama dengan U19).
+- B09 (C): kegagalan RETRIEVAL. Chunk emas (hal 544, "Insulin <= 1.9 L 2.0 - 12.0 uIU/mL") di peringkat 12 dasar, tidak masuk konteks. Penolakan model jujur dan aman.
+- B18, B19 (D): kegagalan RETRIEVAL pada pertanyaan berbahasa Indonesia. Chunk emas peringkat 9 dan 6 di D, tetapi 2 dan 1 di C: daftar baris D mendorong chunk benar keluar dari 5 teratas.
+- B13 (D): perilaku MODEL, bukan varian. Chunk emas peringkat 1 dan ada di konteks, tetapi yang menjawab model cadangan (server sibuk) dan model itu menolak saat melihat dua batas (3,6 dan 1,8).
+
+### Keputusan
+Varian C menjadi dasar. Alasan: skor set buta C >= D (24 vs 23; 25 vs 23 bila kunci B16 dikoreksi), stabilitas set uji C 90/90 vs D 87/90, dan mekanisme kegagalan D di bahasa Indonesia jelas. Biaya: konteks +16% dibanding D.
+Batas kesimpulan: selisih set buta hanya 1 soal dalam 1 putaran, tidak cukup untuk klaim statistik. Dua set (uji dan buta) sama-sama tidak menunjukkan keunggulan D.
+
+### Diagnosis B09 secara offline (tanpa API)
+Baris insulin ada 3 kali (tabel-0420, tabel-0421, prosa-3424), skor sama, peringkat induk 6, 7, 8; C hanya menyisipkan 2 teratas.
+Penyebab: kata konteks kueri ("cardiovascular", "profile", "risk") langka di indeks baris sehingga bobot IDF-nya lebih besar (5,85-6,36) daripada "insulin" (5,34, muncul di 12 baris). Baris laporan hasil gabungan dua kolom ("Due to Jennifer's cardiovascular 4 Mercury 6.93 H <= 4.0") mengandung kata konteks itu dan mengalahkan baris insulin yang pendek. Nama profil ada di baris judul lain, bukan di baris insulin.
+Hipotesis perbaikan yang diuji: tambahan bobot untuk kecocokan di bidang NAMA baris (token sebelum angka/pembanding). Simulasi 48 soal berjawab (set uji + buta), ukuran: chunk emas di 2 induk teratas.
+- tanpa bobot: 19/48; bobot 1: 19/48; bobot 2: 18/48; bobot 3: 18/48.
+- B09 justru memburuk (peringkat 6 -> 7 -> 10 -> 11); B03 turun dari peringkat 1 ke 2-4.
+Hipotesis DITOLAK. Perbaikan tidak diterapkan. Menambahkan "profile/risk/cardiovascular" ke STOP bisa menyelamatkan B09, tetapi itu menyesuaikan pada satu pertanyaan yang sudah dilihat (overfit), jadi tidak dilakukan.
+Catatan: ukuran "gold di 2 induk teratas" hanya 19/48 karena indeks baris sengaja hanya pelengkap; konteks akhir juga memakai 5 teratas hibrida (emas di konteks C: 20/22 pada set buta).
+
+### Langkah berikutnya (belum dikerjakan)
+1. Putar C di set buta 2 putaran lagi (stabilitas pada data yang belum dipakai merancang apa pun).
+2. Koreksi kunci B16 (tambah hal 102) sebagai versi 2 set buta; tulis riwayat versi seperti 20_set_uji.py.
+3. Prompt: jawaban dengan batas ganda harus menyebut semua nilai beserta spesimen/halaman, bukan menolak (B13).
+4. Pertanyaan Indonesia: pertimbangkan penerjemahan kueri ke Inggris sebelum pencarian baris (menambah 1 panggilan model).
+5. Pertimbangkan 3 induk sisipan (bukan 2) untuk kasus baris kembar seperti B09; uji di kedua set.

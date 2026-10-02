@@ -21,19 +21,32 @@ Pakai:
   python 23_uji_baris.py --varian C --hanya U03,U17  # ulang sebagian
   python 23_uji_baris.py --varian D --ringkas        # ringkasan tersimpan, tanpa API
   python 23_uji_baris.py --varian D --nilai-ulang    # nilai ulang dengan kunci terbaru, tanpa API
+  python 23_uji_baris.py --varian D --putaran 1      # simpan ke hasil_uji_D_p1.json (uji stabilitas; lihat 24_stabilitas.py)
+  python 23_uji_baris.py --varian D --set buta       # set uji BUTA -> hasil_buta_D.json
 """
 import json, os, sys, pathlib, re, math, collections, hashlib, time
 import numpy as np
 
 ROOT = pathlib.Path(os.environ.get("LAB_RAG_ROOT", r"C:\Users\sandy\dev\lab-rag"))
 BASE = ROOT / "full"
-SET_FILE = ROOT / "set_uji.json"
-SHA_KUNCI = "c1eb2aead6a7ded75cc98cf9dc975a3d6bcaa5ad0be0b78f389f5d0bfb676b62"  # set_uji v2 (lihat RIWAYAT VERSI di 20_set_uji.py)
+# --set uji (default) = 30 pertanyaan yang sudah dilihat; --set buta = set uji BUTA (25_set_buta.py), dibuat setelah varian D dipilih.
+SETNAME = sys.argv[sys.argv.index("--set") + 1].lower() if "--set" in sys.argv else "uji"
+SHA_SET = {
+    "uji": "c1eb2aead6a7ded75cc98cf9dc975a3d6bcaa5ad0be0b78f389f5d0bfb676b62",   # set_uji v2 (lihat RIWAYAT VERSI di 20_set_uji.py)
+    "buta": "36f92d2250ed58501043f6b7172fb7f20c211d93b234411347948d643cda6e94",   # set_buta (25_set_buta.py), 2 Okt 2026
+}
+if SETNAME not in SHA_SET:
+    raise SystemExit("--set harus 'uji' atau 'buta'")
+SET_FILE = ROOT / f"set_{SETNAME}.json"
+SHA_KUNCI = SHA_SET[SETNAME]
 VARIAN = sys.argv[sys.argv.index("--varian") + 1].upper() if "--varian" in sys.argv else None
 if VARIAN not in ("C", "D"):
     raise SystemExit("wajib: --varian C atau --varian D")
-HASIL = BASE / f"hasil_uji_{VARIAN}.json"
-LAPORAN = BASE / f"hasil_uji_{VARIAN}.txt"
+# --putaran N: simpan ke berkas terpisah (hasil_uji_D_p1.json, ...) untuk uji stabilitas; tanpa opsi ini = berkas biasa.
+PUTARAN = sys.argv[sys.argv.index("--putaran") + 1] if "--putaran" in sys.argv else None
+SUF = f"_p{PUTARAN}" if PUTARAN else ""
+HASIL = BASE / f"hasil_{SETNAME}_{VARIAN}{SUF}.json"
+LAPORAN = BASE / f"hasil_{SETNAME}_{VARIAN}{SUF}.txt"
 BOBOT_BARIS = 0.5   # varian D
 SISIP_BARIS = 2     # varian C
 EMB_MODEL = "gemini-embedding-001"
@@ -72,7 +85,7 @@ def asc(s):
 isi = SET_FILE.read_text(encoding="utf-8")
 sha = hashlib.sha256(isi.encode("utf-8")).hexdigest()
 if sha != SHA_KUNCI:
-    raise SystemExit(f"set_uji.json BERUBAH sejak dikunci (sha {sha[:12]}...). Hasil tidak sebanding - batalkan.")
+    raise SystemExit(f"set_{SETNAME}.json BERUBAH sejak dikunci (sha {sha[:12]}...). Hasil tidak sebanding - batalkan.")
 SET = json.loads(isi)
 
 def nilai(u, ans, pages):
@@ -346,5 +359,5 @@ for qi, u in enumerate(JALAN):
 
 print(tulis_laporan(hasil))
 if dilewati:
-    print("DILEWATI:", ",".join(dilewati), "-> jalankan lagi: python 23_uji_baris.py --varian " + VARIAN + " --hanya " + ",".join(dilewati))
-print(f"detail: full\\hasil_uji_{VARIAN}.txt")
+    print("DILEWATI:", ",".join(dilewati), "-> jalankan lagi: python 23_uji_baris.py --varian " + VARIAN + (f" --putaran {PUTARAN}" if PUTARAN else "") + (f" --set {SETNAME}" if SETNAME != "uji" else "") + " --hanya " + ",".join(dilewati))
+print(f"detail: full\\hasil_{SETNAME}_{VARIAN}{SUF}.txt")

@@ -1,0 +1,512 @@
+[
+ {
+  "id": "B01",
+  "bab": "6",
+  "tipe": "baris-laporan",
+  "analit": "xanthurenate",
+  "q": "What is the reference limit for urinary xanthurenate?",
+  "kunci": [
+   [
+    "1.10"
+   ]
+  ],
+  "halaman": [
+   403
+  ],
+  "emas": [
+   "xanthurenate",
+   "1.10"
+  ]
+ },
+ {
+  "id": "B02",
+  "bab": "6",
+  "tipe": "baris-laporan",
+  "analit": "kynurenate",
+  "q": "What is the reference limit for urinary kynurenate?",
+  "kunci": [
+   [
+    "2.5"
+   ]
+  ],
+  "halaman": [
+   403
+  ],
+  "emas": [
+   "kynurenate",
+   "2.5"
+  ]
+ },
+ {
+  "id": "B03",
+  "bab": "7",
+  "tipe": "spesimen",
+  "analit": "indican",
+  "q": "In the gastrointestinal function profile, what is the reference limit for indican?",
+  "kunci": [
+   [
+    "124"
+   ]
+  ],
+  "halaman": [
+   467
+  ],
+  "emas": [
+   "indican",
+   "124"
+  ]
+ },
+ {
+  "id": "B04",
+  "bab": "7",
+  "tipe": "baris-laporan",
+  "analit": "glucarate",
+  "q": "What is the reference limit for urinary glucarate in the organic acid profile?",
+  "kunci": [
+   [
+    "11.9"
+   ]
+  ],
+  "halaman": [
+   404,
+   547
+  ],
+  "emas": [
+   "glucarate",
+   "11.9"
+  ]
+ },
+ {
+  "id": "B05",
+  "bab": "7",
+  "tipe": "baris-laporan",
+  "analit": "scfa",
+  "q": "What is the reference limit for total short-chain fatty acids (SCFA) in the stool profile?",
+  "kunci": [
+   [
+    "40"
+   ]
+  ],
+  "halaman": [
+   467
+  ],
+  "emas": [
+   "total scfa",
+   "40"
+  ]
+ },
+ {
+  "id": "B06",
+  "bab": "7",
+  "tipe": "baris-laporan",
+  "analit": "bacteroides",
+  "q": "What is the reference value for Bacteroides in the GI function profile?",
+  "kunci": [
+   [
+    "1.3"
+   ]
+  ],
+  "halaman": [
+   467
+  ],
+  "emas": [
+   "bacteroides",
+   "1.3"
+  ]
+ },
+ {
+  "id": "B07",
+  "bab": "3",
+  "tipe": "baris-laporan",
+  "analit": "homovanillate",
+  "q": "What is the reference interval for urinary homovanillate?",
+  "kunci": [
+   [
+    "1.3"
+   ],
+   [
+    "15.2"
+   ]
+  ],
+  "halaman": [
+   157,
+   604,
+   605
+  ],
+  "emas": [
+   "homovanillate",
+   "15.2"
+  ]
+ },
+ {
+  "id": "B08",
+  "bab": "10",
+  "tipe": "baris-laporan",
+  "analit": "sex hormone",
+  "q": "What is the reference range for sex hormone-binding globulin (SHBG)?",
+  "kunci": [
+   [
+    "18"
+   ],
+   [
+    "114"
+   ]
+  ],
+  "halaman": [
+   544
+  ],
+  "emas": [
+   "sex hormone-binding",
+   "114"
+  ]
+ },
+ {
+  "id": "B09",
+  "bab": "10",
+  "tipe": "baris-laporan",
+  "analit": "insulin",
+  "q": "What is the reference range for insulin in the cardiovascular risk profile?",
+  "kunci": [
+   [
+    "2.0"
+   ],
+   [
+    "12.0"
+   ]
+  ],
+  "halaman": [
+   544
+  ],
+  "emas": [
+   "insulin",
+   "12.0"
+  ]
+ },
+ {
+  "id": "B10",
+  "bab": "9",
+  "tipe": "baris-laporan",
+  "analit": "lipoprotein (a)",
+  "q": "What is the reference limit for lipoprotein(a)?",
+  "kunci": [
+   [
+    "37"
+   ]
+  ],
+  "halaman": [
+   544
+  ],
+  "emas": [
+   "lipoprotein (a)",
+   "37"
+  ]
+ },
+ {
+  "id": "B11",
+  "bab": "3",
+  "tipe": "baris-laporan",
+  "analit": "transferrin saturation",
+  "q": "What is the reference range for transferrin saturation in the iron status example?",
+  "kunci": [
+   [
+    "14"
+   ],
+   [
+    "50"
+   ]
+  ],
+  "halaman": [
+   155
+  ],
+  "emas": [
+   "transferrin saturation",
+   "14"
+  ]
+ },
+ {
+  "id": "B12",
+  "bab": "3",
+  "tipe": "baris-laporan",
+  "analit": "magnesium",
+  "q": "What is the reference interval for magnesium in red blood cells?",
+  "kunci": [
+   [
+    "40"
+   ],
+   [
+    "80"
+   ]
+  ],
+  "halaman": [
+   150,
+   151,
+   153
+  ],
+  "emas": [
+   "magnesium",
+   "40 - 80"
+  ]
+ },
+ {
+  "id": "B13",
+  "bab": "6",
+  "tipe": "multi-nilai",
+  "analit": "tricarballylate",
+  "q": "What is the reference limit for tricarballylate?",
+  "kunci": [
+   [
+    "3.6",
+    "1.8"
+   ]
+  ],
+  "halaman": [
+   405,
+   406,
+   467,
+   614
+  ],
+  "emas": [
+   "tricarballylate",
+   "3.6"
+  ]
+ },
+ {
+  "id": "B14",
+  "bab": "6",
+  "tipe": "multi-nilai",
+  "analit": "orotate",
+  "q": "What is the reference limit for orotate?",
+  "kunci": [
+   [
+    "1.6",
+    "180"
+   ]
+  ],
+  "halaman": [
+   404,
+   547,
+   614
+  ],
+  "emas": [
+   "orotate",
+   "1.6"
+  ]
+ },
+ {
+  "id": "B15",
+  "bab": "6",
+  "tipe": "multi-nilai",
+  "analit": "pyroglutamate",
+  "q": "What is the reference limit for pyroglutamate?",
+  "kunci": [
+   [
+    "95",
+    "72",
+    "80"
+   ]
+  ],
+  "halaman": [
+   404,
+   547,
+   614
+  ],
+  "emas": [
+   "pyroglutamate",
+   "95"
+  ]
+ },
+ {
+  "id": "B16",
+  "bab": "3",
+  "tipe": "multi-nilai",
+  "analit": "ferritin",
+  "q": "What is the reference range for serum ferritin?",
+  "kunci": [
+   [
+    "40",
+    "28"
+   ]
+  ],
+  "halaman": [
+   155,
+   156
+  ],
+  "emas": [
+   "ferritin",
+   "40"
+  ]
+ },
+ {
+  "id": "B17",
+  "bab": "4",
+  "tipe": "spesimen",
+  "analit": "taurine",
+  "q": "What is the blood spot reference range for taurine?",
+  "kunci": [
+   [
+    "138",
+    "133"
+   ],
+   [
+    "355"
+   ]
+  ],
+  "halaman": [
+   197,
+   260
+  ],
+  "emas": [
+   "taurine",
+   "138"
+  ]
+ },
+ {
+  "id": "B18",
+  "bab": "8",
+  "tipe": "indonesia",
+  "analit": "vitamin c",
+  "q": "Apa fungsi vitamin C dalam detoksifikasi menurut tabel fungsi detoksifikasi nutrien?",
+  "kunci": [
+   [
+    "mobilization",
+    "mobilisasi"
+   ],
+   [
+    "antioxidant",
+    "antioksidan"
+   ]
+  ],
+  "halaman": [
+   513
+  ],
+  "emas": [
+   "vitamin c",
+   "mobilization"
+  ]
+ },
+ {
+  "id": "B19",
+  "bab": "8",
+  "tipe": "indonesia",
+  "analit": "lead protection",
+  "q": "Nutrien mana yang memberi perlindungan terhadap timbal (lead) dalam tabel fungsi detoksifikasi nutrien?",
+  "kunci": [
+   [
+    "calcium",
+    "kalsium"
+   ]
+  ],
+  "halaman": [
+   513
+  ],
+  "emas": [
+   "calcium",
+   "lead protection"
+  ]
+ },
+ {
+  "id": "B20",
+  "bab": "8",
+  "tipe": "indonesia",
+  "analit": "soft tissue",
+  "q": "Intervensi apa saja yang disebutkan untuk meningkatkan laju mobilisasi toksin dari jaringan lunak dan tulang?",
+  "kunci": [
+   [
+    "dmps",
+    "dmsa",
+    "edta",
+    "penicillamine",
+    "chelation"
+   ]
+  ],
+  "halaman": [
+   514
+  ],
+  "emas": [
+   "rate of mobilization",
+   "dmsa"
+  ]
+ },
+ {
+  "id": "B21",
+  "bab": "8",
+  "tipe": "tabel",
+  "analit": "mehp",
+  "q": "What percentage of children had detectable mono-(2-ethylhexyl) phthalate (mEHP) in the New York City study?",
+  "kunci": [
+   [
+    "97.5"
+   ]
+  ],
+  "halaman": [
+   490
+  ],
+  "emas": [
+   "mehp",
+   "97.5"
+  ]
+ },
+ {
+  "id": "B22",
+  "bab": "3",
+  "tipe": "tabel",
+  "analit": "edta",
+  "q": "Which chelating agent binds cadmium, lead and manganese?",
+  "kunci": [
+   [
+    "canaedta",
+    "cana-edta",
+    "calcium disodium"
+   ]
+  ],
+  "halaman": [
+   87
+  ],
+  "emas": [
+   "cadmium, lead, manganese"
+  ]
+ },
+ {
+  "id": "B23",
+  "bab": "-",
+  "tipe": "menolak",
+  "menolak": true,
+  "q": "What is the reference range for CA-125?",
+  "cek_absen": [
+   "ca-125",
+   "ca 125"
+  ]
+ },
+ {
+  "id": "B24",
+  "bab": "-",
+  "tipe": "menolak-indonesia",
+  "menolak": true,
+  "q": "Berapa batas normal cystatin C dalam serum?",
+  "cek_absen": [
+   "cystatin"
+  ]
+ },
+ {
+  "id": "B25",
+  "bab": "-",
+  "tipe": "menolak",
+  "menolak": true,
+  "q": "What is the reference range for serum PSA (prostate-specific antigen)?",
+  "cek_absen": [
+   "psa"
+  ]
+ },
+ {
+  "id": "B26",
+  "bab": "-",
+  "tipe": "menolak",
+  "menolak": true,
+  "q": "What is the reference limit for urinary lithium?",
+  "cek_absen": [
+   "urinary lithium",
+   "lithium <=",
+   "lithium  <"
+  ]
+ }
+]
