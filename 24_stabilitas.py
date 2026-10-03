@@ -2,6 +2,7 @@
 
 Pakai:  python 24_stabilitas.py            # varian D (default)
         python 24_stabilitas.py --varian C
+        python 24_stabilitas.py --varian C-SAR-EKS --set nyata2   # kombinasi flag = bagian dari nama varian (huruf besar)
 
 Yang dilaporkan:
   - skor tiap putaran (LULUS dst.) dan pertanyaan yang belum selesai di sebuah putaran
@@ -35,7 +36,7 @@ for p in ps:
     kosong = [u["id"] for u in SET if u["id"] not in R[p]]
     print(f"  putaran {p}: " + ", ".join(f"{k} {v}" for k, v in sorted(c.items())) + (f" | BELUM ADA: {','.join(kosong)}" if kosong else ""))
 
-tidak_stabil, halus, isi_beda = [], [], []
+tidak_stabil, halus, isi_beda, langgar = [], [], [], []
 lengkap = [u for u in SET if all(u["id"] in R[p] for p in ps)]
 for u in lengkap:
     nil = [R[p][u["id"]]["nilai"] for p in ps]
@@ -43,6 +44,8 @@ for u in lengkap:
         tidak_stabil.append((u["id"], u["tipe"], nil))
     if u.get("menolak") and any(n == "HALUSINASI" for n in nil):
         halus.append(u["id"])
+    if any(n == "PELANGGARAN" for n in nil):
+        langgar.append(u["id"])
     if not u.get("menolak") and len(set(nil)) == 1 and nil[0] == "LULUS":
         a = [angka(R[p][u["id"]]["jawaban"]) for p in ps]
         if any(x != a[0] for x in a):
@@ -57,6 +60,7 @@ if tidak_stabil:
 else:
     print("TIDAK STABIL: tidak ada")
 print("HALUSINASI di salah satu putaran: " + (", ".join(halus) if halus else "tidak ada"))
+print("PELANGGARAN (tingkat 2/3) di salah satu putaran: " + (", ".join(langgar) if langgar else "tidak ada"))
 if isi_beda:
     print("LULUS semua putaran tetapi ANGKA di jawaban berbeda (baca manual):")
     for i, a in isi_beda:
