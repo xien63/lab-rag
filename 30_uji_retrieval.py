@@ -210,8 +210,10 @@ def ranks(order):
 
 
 PRON = re.compile(r"\b(saya|aku|ku|kami|punya saya|milik saya)\b", re.I)
-ANGKA = re.compile(r"\b\d+([.,]\d+)?\b")
+ANGKA = re.compile(r"(?<![\w-])\d+([.,]\d+)?\s*%?(?![\w-])")   # angka mandiri saja: "omega-3", "25-OH", "B12" tidak disentuh
 def netralkan(q):
+    if not PRON.search(q):
+        return q   # hanya soal berkata ganti orang pertama yang dinetralkan
     t = ANGKA.sub("", PRON.sub("", q))
     t = re.sub(r"\s+", " ", t)
     t = re.sub(r"\s+([,?.])", r"\1", t)

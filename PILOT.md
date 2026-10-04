@@ -945,3 +945,58 @@ Uji kode tanpa API (embedding tiruan acak): jalur berjalan; angka dari uji itu T
 python 30_uji_retrieval.py
 ```
 Hasil: `full\hasil_retrieval.txt` dan `full\hasil_retrieval.json`. Butuh `GEMINI_API_KEY` di terminal. Skrip membuat `full\terjemah_netral_cache.json` (git-ignored).
+
+
+## Hasil tolok ukur retrieval tingkat chunk (5 Okt 2026), dibaca per aturan yang dikunci
+
+Aturan 0 (validitas): reproduksi top-5 V0 = hasil tersimpan 21/21 (ambang >= 19). Tolok ukur VALID.
+
+| id | V0 | K8 | K10 | V3 | V4 | V5 | catatan |
+|---|---|---|---|---|---|---|---|
+| U19 | 23 | - | - | 11 | 23 | 11 | tidak masuk konteks pada varian mana pun |
+| B09 | 9 | - | * | 4* | 9 | 4* | |
+| N15 | 5* | * | * | 5* | 5* | 5* | sudah di konteks |
+| P06 | 6 | * | * | 8 | 6 | 8 | |
+| N02 | 16* | * | * | 17* | 16* | 17* | |
+| B15 | 12 | - | - | 15 | 12 | 15 | tidak masuk konteks pada varian mana pun |
+| M01 | 5* | * | * | 6* | 5* | 6* | |
+| P10 | 8 | * | * | 8 | 4* | 4* | |
+| Q13 | 15* | * | * | 17* | 4* | 4* | |
+(* = masuk konteks. Kontrol: 12 butir, semua di konteks pada semua varian; V3/V4/V5 tidak memburukkan satu pun dan memperbaiki B10 2->1.)
+
+Butir TARGET masuk konteks (dari 9): V0 4, K8 6, K10 7, V3 5, V4 5, V5 6. Konteks median: k5 = 11 chunk, k8 = 17 (+55%), k10 = 21 (+91%).
+
+### Pembacaan menurut aturan 2-3
+- **V5 lolos aturan 2** (a: +2 target; b: nol kontrol keluar; c: nol kontrol memburuk > 3; d: P10 dan Q13 peringkat 4 <= peringkat M01 + 2). Tetapi lolosnya aditif dari dua efek kecil: V4 memasukkan P10 (+1), V3 memasukkan B09 (+1). V3 sendiri GAGAL (a) (+1) dan memburukkan P06 (6->8), B15 (12->15), Q13, N02, M01 sebesar 1-2 peringkat; V4 sendiri gagal (a) (+1) tetapi efeknya paling jelas.
+- **K8 dan K10 lolos (a)** (+2 dan +3); biaya +55% dan +91% chunk per konteks; keputusan biaya ada pada Sandy (aturan 3).
+- **Netralisasi kueri bekerja pada soal pribadi homosistein**: P10 8->4, Q13 15->4, bahkan lebih baik dari M01 yang tidak pribadi (5). Efek ini berasal dari satu analit (tiga butir berbagi bukti): jumlah observasi independen kecil.
+- Kombinasi V5+K8 TIDAK diuji; hanya dapat disimpulkan dari peringkat (P06 8, B09 4, P10 4 semua <= 8) dan harus dianggap hipotesis.
+- Tidak tertolong varian mana pun: U19 (terbaik peringkat 11 dengan V3) dan B15. Stemming bukan perbaikan U19 yang cukup; dugaan penyebab U19 yang tersisa belum terbukti.
+
+### Klasifikasi butir (tanpa mengubah skor resmi)
+- N15 (PERIKSA): BUKAN kegagalan retrieval (chunk benar `prosa-0566` peringkat 5 dan di konteks). Jawaban model benar ("tanda awal berkurangnya cadangan besi"); kunci mensyaratkan "iron" atau "zat besi" dan jawaban hanya berkata "besi". Cacat kunci, terverifikasi dari teks jawaban.
+- P06, P10, B09 (MENOLAK_AMAN): sebab retrieval dan berpotensi tertolong (P06 oleh K8; P10 oleh V4/V5/K8; B09 oleh V3/V5/K10). U19 tetap tidak tertolong.
+
+### Keputusan tentang langkah berikutnya (aturan 4)
+Tidak ada varian diterima dari tolok ukur ini. Yang lolos ke uji generasi pada set segar terkunci (nyata5): **V5** (gratis dalam token) dan, bila Sandy menerima biayanya, **K8**. Uji generasi harus membandingkan varian dasar vs kandidat pada soal yang sama dengan nol PELANGGARAN/HALUSINASI dan tanpa kerugian bersih. Set nyata5 sebaiknya ditulis oleh Sandy/tim dengan gaya pengguna asli (soal saja; kunci diverifikasi dari buku), dikunci SHA sebelum dijalankan.
+
+
+## Keputusan Sandy: V5 saja (5 Okt 2026) dan implementasinya
+
+Keputusan: hanya V5 (stemming bentuk jamak pada BM25 prosa + netralisasi kueri soal pribadi) yang dibawa ke uji generasi; K8/K10 TIDAK (biaya +55%/+91% konteks, kombinasi V5+K8 tidak diuji). Top-k tetap 5. V5 belum diterima: penerimaan menunggu uji generasi pada set segar terkunci (nyata5) dengan nol PELANGGARAN/HALUSINASI dan tanpa kerugian bersih terhadap varian dasar pada soal yang sama.
+
+### Implementasi di `23_uji_baris.py`
+- `--stem` (BM25 prosa memakai stemming jamak: -ies, -ches/-shes/-sses/-xes/-zes, -s; kata berakhiran -ss/-us/-is dan angka tidak diubah; indeks baris tidak distem) dan `--netral` (butuh `--ekspansi`). Keduanya bersama = V5. Tag hasil: `...-ARH-STM-NET`, mis. `hasil_nyata5_C-SAR-EKS-LEN-RUB3-ARH-STM-NET.json`.
+- Netralisasi hanya memengaruhi KUERI retrieval. Pengarah dan prompt jawab tetap memakai pertanyaan asli. Terjemahan kueri netral di-cache di `full/terjemah_netral_cache.json` (cache yang sama dengan tolok ukur). Bila terjemahan netral gagal di semua model, proses berhenti (tidak dicampur dengan kueri biasa).
+- Hasil menyimpan `kueri` yang dipakai per butir.
+- Uji tanpa API (embedding tiruan): tanpa `--stem/--netral` hasil top-5 dan konteks identik dengan versi sebelumnya pada 22 butir (perilaku bawaan tidak berubah); jalur V5 berjalan.
+
+### Pengetatan aturan netralisasi (ditemukan saat uji; dicatat terbuka)
+Versi yang diuji di tolok ukur menghapus angka mandiri dari semua soal dan dapat merusak nama analit berangka (mis. "omega-3" menjadi "omega-"). Aturan kini: (1) netralisasi hanya bila pertanyaan memuat kata ganti orang pertama (saya/aku/ku/kami/punya saya/milik saya); (2) angka dihapus hanya bila mandiri, tidak menempel pada huruf, angka, atau tanda hubung ("omega-3", "25-OH", "B12" aman); persen yang mengikuti ikut dihapus. Diterapkan di `23_uji_baris.py` dan `30_uji_retrieval.py`. Keabsahan hasil tolok ukur: pada 21 butir tolok ukur hanya P10, Q13, dan M21 yang berubah kueri di bawah aturan lama, ketiganya memuat "saya" dan tidak memuat angka-hubung, sehingga kueri netral mereka IDENTIK di bawah aturan baru; hasil tolok ukur tetap berlaku. Uji unit manual aturan baru pada 10 kalimat berjalan sesuai.
+
+### Dasar untuk uji generasi
+Perintah yang akan dijalankan setelah nyata5 terkunci (pembanding dan kandidat, soal sama):
+```
+python 23_uji_baris.py --varian C --set nyata5 --saring --ekspansi --lengkap --rubrik3 --arah
+python 23_uji_baris.py --varian C --set nyata5 --saring --ekspansi --lengkap --rubrik3 --arah --stem --netral
+```

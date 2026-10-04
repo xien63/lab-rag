@@ -58,9 +58,13 @@ if VARIAN not in ("C", "D"):
 # --putaran N: simpan ke berkas terpisah (hasil_uji_D_p1.json, ...) untuk uji stabilitas; tanpa opsi ini = berkas biasa.
 SARING, EKSPANSI, LENGKAP, RUBRIK, RUBRIK2 = ("--saring" in sys.argv, "--ekspansi" in sys.argv, "--lengkap" in sys.argv, "--rubrik" in sys.argv, "--rubrik2" in sys.argv)
 RUBRIK3, ARAH = ("--rubrik3" in sys.argv, "--arah" in sys.argv)
+# V5 (tolok ukur retrieval 30_uji_retrieval.py): --stem = BM25 prosa dengan stemming bentuk jamak; --netral = kueri soal pribadi dinetralkan sebelum diterjemahkan. Keduanya = V5.
+STEM, NETRAL = ("--stem" in sys.argv, "--netral" in sys.argv)
+if NETRAL and not EKSPANSI:
+    raise SystemExit("--netral membutuhkan --ekspansi (kueri netral juga diterjemahkan)")
 if RUBRIK + RUBRIK2 + RUBRIK3 > 1:
     raise SystemExit("--rubrik, --rubrik2 dan --rubrik3 tidak boleh dipakai bersamaan (v1, v1.1, v1.2)")
-TAG = "".join(t for t, on in (("-SAR", SARING), ("-EKS", EKSPANSI), ("-LEN", LENGKAP), ("-RUB", RUBRIK), ("-RUB2", RUBRIK2), ("-RUB3", RUBRIK3), ("-ARH", ARAH)) if on)
+TAG = "".join(t for t, on in (("-SAR", SARING), ("-EKS", EKSPANSI), ("-LEN", LENGKAP), ("-RUB", RUBRIK), ("-RUB2", RUBRIK2), ("-RUB3", RUBRIK3), ("-ARH", ARAH), ("-STM", STEM), ("-NET", NETRAL)) if on)
 VTAG = VARIAN + TAG
 PUTARAN = sys.argv[sys.argv.index("--putaran") + 1] if "--putaran" in sys.argv else None
 SUF = f"_p{PUTARAN}" if PUTARAN else ""
@@ -318,7 +322,52 @@ if EKSPANSI:
     TERJ = {u["q"]: cache.get(u["q"], "") for u in JALAN}
     print("terjemahan kueri:", {k: v for k, v in list(TERJ.items())[:3]}, "...")
 
+PRON = re.compile(r"\b(saya|aku|ku|kami|punya saya|milik saya)\b", re.I)
+ANGKA = re.compile(r"(?<![\w-])\d+([.,]\d+)?\s*%?(?![\w-])")   # angka mandiri saja: "omega-3", "25-OH", "B12" tidak disentuh
+def netralkan(q):
+    if not PRON.search(q):
+        return q   # hanya soal berkata ganti orang pertama yang dinetralkan
+    t = ANGKA.sub("", PRON.sub("", q))
+    t = re.sub(r"\s+", " ", t)
+    t = re.sub(r"\s+([,?.])", r"\1", t)
+    t = re.sub(r"^[\s,]+|(?<=[,])\s*,", "", t).strip()
+    return t
+
+TERJN = {}
+if NETRAL:
+    NF = BASE / "terjemah_netral_cache.json"   # cache yang sama dengan 30_uji_retrieval.py
+    cache_n = json.loads(NF.read_text(encoding="utf-8")) if NF.exists() else {}
+    SYS_TR = ("Translate the user's question into one concise English question, using the exact terminology of a clinical laboratory and nutrition "
+              "reference book (analyte names, drug names, drug classes, nutrient names). Output only the English question, nothing else.")
+    for u in JALAN:
+        qn = netralkan(u["q"])
+        if not qn or qn.lower() == u["q"].lower() or qn in cache_n:
+            continue
+        tr_ = None
+        for m in CHAT_MODELS:
+            for k in range(3):
+                try:
+                    tr = client.models.generate_content(model=m, contents=qn, config=types.GenerateContentConfig(
+                        system_instruction=SYS_TR, temperature=0, thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)))
+                    tr_ = (tr.text or "").strip().replace("\n", " ")
+                    break
+                except Exception as e:
+                    print(f"  terjemahan netral gagal di {m} ({type(e).__name__}), tunggu {10 * (k + 1)} detik")
+                    time.sleep(10 * (k + 1))
+            if tr_:
+                break
+        if not tr_:
+            raise SystemExit(f"terjemahan netral {u['id']} gagal di semua model - jalankan lagi (tidak dicampur dengan kueri biasa)")
+        cache_n[qn] = tr_
+        NF.write_text(json.dumps(cache_n, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"netral {u['id']}: '{u['q']}' -> '{qn}' -> '{tr_}'")
+    TERJN = cache_n
+
 def kueri(u):
+    if NETRAL:
+        qn = netralkan(u["q"])
+        if qn and qn.lower() != u["q"].lower():
+            return (qn + " " + TERJN[qn]).strip()
     return (u["q"] + " " + TERJ.get(u["q"], "")).strip() if EKSPANSI else u["q"]
 
 r = client.models.embed_content(model=EMB_MODEL, contents=[kueri(u) for u in JALAN],
@@ -343,9 +392,20 @@ if SARING:
 
 GREEK = str.maketrans({"\u03b1": "a", "\u03b2": "b", "\u00df": "b", "\u03b3": "g", "\u03b4": "d", "\u03bc": "u", "\u00b5": "u"})
 
+def stem(t):
+    """Stemming ringan (hanya --stem): bentuk jamak bahasa Inggris. Angka dan kata berakhiran -ss/-us/-is tidak diubah."""
+    if len(t) > 4 and t.endswith("ies"):
+        return t[:-3] + "y"
+    if len(t) > 4 and t.endswith(("ches", "shes", "sses", "xes", "zes")):
+        return t[:-2]
+    if len(t) > 3 and t.endswith("s") and not t.endswith(("ss", "us", "is")):
+        return t[:-1]
+    return t
+
 def tok(s):
     s = s.lower().translate(GREEK)
-    return [t for t in re.split(r"[^a-z0-9.%]+", s) if len(t) >= 2]
+    x = [t for t in re.split(r"[^a-z0-9.%]+", s) if len(t) >= 2]
+    return [stem(w) for w in x] if STEM else x
 
 docs = [tok(t) for t in texts]
 N = len(docs)
@@ -576,10 +636,10 @@ for qi, u in enumerate(JALAN):
     print(f"{u['id']} [{u['tipe']}] {v:16} emas#{rank_emas} konteks:{'YA' if emas_di_konteks else '-'} hal {pages}")
     hasil[u["id"]] = dict(nilai=v, model=model_used, rank_emas=rank_emas, emas_di_konteks=emas_di_konteks,
                           halaman_jawaban=pages, top5=[ids[j] for j in top], konteks=[ids[j] for j in konteks], jawaban=ans,
-                          arah=tingkat_arah, arah_alasan=alasan_arah, dipangkas=dipangkas)
+                          arah=tingkat_arah, arah_alasan=alasan_arah, dipangkas=dipangkas, kueri=q)
     HASIL.write_text(json.dumps(hasil, ensure_ascii=False, indent=1), encoding="utf-8")
 
 print(tulis_laporan(hasil))
 if dilewati:
-    print("DILEWATI:", ",".join(dilewati), "-> jalankan lagi: python 23_uji_baris.py --varian " + VARIAN + "".join(" --" + n for n, on in (("saring", SARING), ("ekspansi", EKSPANSI), ("lengkap", LENGKAP), ("rubrik", RUBRIK), ("rubrik2", RUBRIK2), ("rubrik3", RUBRIK3), ("arah", ARAH)) if on) + (f" --putaran {PUTARAN}" if PUTARAN else "") + (f" --set {SETNAME}" if SETNAME != "uji" else "") + " --hanya " + ",".join(dilewati))
+    print("DILEWATI:", ",".join(dilewati), "-> jalankan lagi: python 23_uji_baris.py --varian " + VARIAN + "".join(" --" + n for n, on in (("saring", SARING), ("ekspansi", EKSPANSI), ("lengkap", LENGKAP), ("rubrik", RUBRIK), ("rubrik2", RUBRIK2), ("rubrik3", RUBRIK3), ("arah", ARAH), ("stem", STEM), ("netral", NETRAL)) if on) + (f" --putaran {PUTARAN}" if PUTARAN else "") + (f" --set {SETNAME}" if SETNAME != "uji" else "") + " --hanya " + ",".join(dilewati))
 print(f"detail: full\\hasil_{SETNAME}_{VTAG}{SUF}.txt")
