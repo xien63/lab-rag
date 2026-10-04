@@ -900,3 +900,48 @@ Kedua butir identik dengan hasil RUB2, jadi bukan akibat pengarah.
 
 ### Tidak termasuk syarat, tetap terbuka
 Top-k 8 dan netralisasi kueri (hipotesis, butuh set segar); M18 diblokir pengarah sebagai tingkat 3 (lebih ketat dari kunci); B11 dan N15 PERIKSA belum diklasifikasi; kunci rapuh M20 (200/40 vs buku 300/150).
+
+
+## Analisis ulang rencana dan langkah 2: ukuran retrieval dari hasil yang ada (5 Okt 2026)
+
+### Revisi rencana (menggantikan daftar syarat 1-5 di bagian "opsi 3" di atas bila bertentangan)
+Kelemahan yang ditemukan pada rencana sebelumnya: (1) tinjauan hukum dan keputusan produk ada di urutan akhir padahal dapat membatalkan validasi (mis. bila angka dosis kutipan tidak boleh sama sekali); (2) kode dibekukan sebelum keputusan retrieval; (3) pengarah menjadi titik tunggal kegagalan keselamatan tetapi hanya diuji pada ±14 butir tingkat 3/campuran tulisan sendiri; (4) model cadangan untuk pengarah menambah pengklasifikasi yang belum tervalidasi; (5) merevisi kunci `uji` setelah hasil adalah pemindahan gawang, dan `uji` sudah terbakar karena dipakai sejak pengembangan; (6) semua set, kunci, dan pemeriksa ditulis oleh satu pihak.
+Urutan baru: (1) ajukan pertanyaan dosis-rujukan ke pihak berwenang sekarang, paralel; (2) ukur retrieval sebelum pembekuan; (3) pengarah: bila gagal, degradasi aman (diperlakukan "campuran": model utama saja, pemangkas dosis aktif; bila model utama juga gagal, pesan "layanan sibuk"), ditambah pra-pemeriksa deterministik penanda pribadi sebagai lapisan kedua; uji pengarah SENDIRIAN pada lembar 140 pertanyaan + parafrase/salah ketik, dengan label manusia pada sampel; (4) set segar `nyata5` (ditulis Sandy/tim, gaya pengguna asli, dikunci SHA) sebagai gerbang akhir, `uji` hanya regresi; "uji v2" dengan kunci baru DIBATALKAN; (5) tiga putaran stabilitas dengan kode final pada nyata4 dan nyata5; (6) adjudikasi manusia atas ±30 jawaban. Model cadangan untuk pengarah DIBATALKAN. Catatan statistik: 0 pelanggaran dari 154 butir hanya memberi batas atas risiko per butir ±2% (aturan tiga), butir tidak independen.
+
+### Langkah 2: retrieval, dihitung dari 154 hasil RUB3-ARH (tanpa memanggil API)
+- 107 butir memiliki penanda emas; 47 tidak (tingkat 3 dan sejenisnya).
+- Peringkat emas <= 5: 80/107; <= 8: 92/107; <= 10: 97/107; <= 15: 102/107.
+- Emas masuk konteks sekarang (setelah perluasan tetangga): 95/107.
+- Butir non-LULUS (12) menurut penyebab retrieval: yang bisa tertolong top-k 8: P06 (rank 6), P10 (rank 8), N15 (rank 8; PERIKSA); top-k 10 menambah B09 (rank 9); U17 rank 7 tetapi masalahnya kunci. Yang TIDAK tertolong: U19 (lihat koreksi), M18 (pengarah), M20 (kunci), B11, N02, P08, M11 (rank 20). Jadi potensi perbaikan paling banyak 3-4 dari 154 butir (+/-2%).
+- Tiga butir dengan emas di luar konteks tetap LULUS (M01, M05, Q17): jawabannya datang dari chunk lain.
+- Biaya: konteks median 12 chunk (maks 17); top-k 8 diperkirakan sekitar +50% token (perkiraan, belum diukur). Risiko konteks lebih banyak (lebih banyak pengecoh, HALUSINASI pada soal menolak-istilah, bocor dosis) tidak dapat diukur tanpa memanggil model jawab.
+
+### KOREKSI atas catatan saya sendiri (U19)
+Di bagian "Verifikasi dua butir uji" saya menulis bahwa U19 "mendukung hipotesis top-k 8". Itu tidak didukung data. Pemeriksaan tingkat chunk: chunk yang memuat batas urin ("Urine Lipid Peroxide ... <= 40.0 nM/mg crea", Figure 8.16) adalah `prosa-3212` dan `prosa-3213` (hal. 510), dan keduanya TIDAK ada di konteks U19 (konteks berisi prosa-3380..3383, 3866..3868, tabel-0425, tabel-0026, tabel-0260). Metrik "emas di konteks = ya, rank 3" untuk U19 adalah POSITIF PALSU: penanda emas ("lipid peroxides", "2.0") cocok dengan chunk lain (batas serum). Akibatnya: (a) metrik emas berbasis penanda MENGGELEMBUNGKAN angka retrieval (95/107 adalah batas atas); (b) rank sebenarnya chunk benar untuk U19 tidak diketahui; (c) dugaan penyebab (hipotesis, belum diuji): ketidakcocokan leksikal, kueri "urinary" vs teks "Urine", dan pasangan penanda "2.0".
+### Kesimpulan langkah 2
+Bukti saat ini TIDAK cukup untuk menaikkan top-k ke 8 (perbaikan maksimal ±2%, biaya token naik, risiko tidak terukur). Keputusan: top-k tetap 5. Langkah yang sebenarnya diperlukan sebelum keputusan retrieval apa pun: tolok ukur tingkat chunk (id chunk benar diverifikasi dari teks buku untuk butir yang gagal), diukur dengan retrieval saja (hanya panggilan embedding), membandingkan: top-k 5/8/10, kueri dinetralkan (buang kata ganti dan angka pribadi), dan bentuk leksikal ganda (urinary/urine).
+
+
+## Tolok ukur retrieval tingkat chunk (`30_uji_retrieval.py`): rancangan dan aturan baca, dikunci sebelum dijalankan (5 Okt 2026)
+
+### Koreksi atas hipotesis U19 (catatan saya sendiri)
+Di atas saya menduga penyebab U19 adalah "kueri 'urinary' vs teks 'Urine'". Itu hampir pasti keliru: kueri yang dikirim ke retrieval adalah GABUNGAN pertanyaan asli + terjemahan, dan terjemahan U19 sudah berbunyi "What is the reference range for urine lipid peroxides?" (terjemah_cache.json). Ketidakcocokan leksikal yang tersisa dan dapat diverifikasi: kueri memuat "peroxide**s**" (jamak), chunk benar `prosa-3212` memuat "Urine Lipid Peroxide ... <= 40.0" (tunggal), dan kueri berkata "range" sedangkan chunk berkata "Reference Interval". BM25 di pipeline tidak memakai stemming sama sekali.
+
+### Yang diukur
+Sembilan butir TARGET (U19, B09, N15, P06, N02, B15, M01, P10, Q13; tiga butir homosistein berbagi bukti) dan 12 KONTROL (LULUS, emas peringkat 1-2: B10, B18, B20, N13, N20, M09, M21, Q14, U05, U06, U08, U14). Untuk TARGET, bukti = pola teks pada halaman tertentu yang diverifikasi dari buku (bukan penanda emas lama): U19 `prosa-3212`; B09 `tabel-0420/0421`, `prosa-3424`; N15 `prosa-0566`; P06 `prosa-0166/0167`; N02 `prosa-0906/0909/0910`; B15 `tabel-0319/0426`, `prosa-2499/2500/3435`; homosistein `tabel-0462..0464`, `prosa-0329..0331`, `prosa-1605`, `prosa-3813`. KONTROL memakai penanda emas set (peringkat 1-2, jadi positif palsu kecil kemungkinannya, tetapi tidak nol).
+Varian: V0 (dasar, persis 23_uji_baris.py, varian C); K8 dan K10 (konteks dari 8 / 10 teratas; peringkat sama dengan V0); V3 (BM25 prosa dengan stemming bentuk jamak -s/-es/-ies pada dokumen DAN kueri); V4 (kueri dinetralkan: kata ganti dan angka pribadi dibuang sebelum diterjemahkan; hanya berbeda untuk soal pribadi dan butir kontrol berangka); V5 (V3 + V4). Hanya panggilan embedding dan terjemahan kueri; model jawab TIDAK dipanggil.
+Uji kode tanpa API (embedding tiruan acak): jalur berjalan; angka dari uji itu TIDAK bermakna dan tidak dipakai.
+
+### Aturan baca (dikunci)
+0. **Validitas:** top-5 V0 harus sama dengan top5 yang tersimpan di hasil RUB3-ARH pada >= 19 dari 21 butir. Bila kurang, tolok ukur dinyatakan tidak valid (ketidakcocokan kode atau embedding tidak deterministik) dan tidak ada kesimpulan yang diambil.
+1. **Bias seleksi:** TARGET dipilih karena gagal atau berperingkat buruk. Tolok ukur ini hanya dapat MENOLAK sebuah varian atau meloloskannya ke uji generasi; tidak cukup untuk MENERIMA.
+2. Sebuah varian lolos ke uji generasi bila: (a) memasukkan >= 2 butir TARGET lebih banyak ke konteks dibanding V0; (b) NOL butir kontrol keluar dari konteks; (c) paling banyak 1 kontrol memburuk lebih dari 3 peringkat; (d) khusus V4/V5: peringkat P10 dan Q13 tidak lebih buruk dari peringkat M01 + 2.
+3. K8/K10 dinilai hanya dari (a) dan dari biaya (median chunk per konteks, dilaporkan); keputusan biaya ada pada Sandy.
+4. Bahkan bila aturan 2 terpenuhi, penerimaan membutuhkan uji generasi pada set segar terkunci dengan nol PELANGGARAN/HALUSINASI dan tanpa kerugian bersih. Tidak ada varian diterima dari tolok ukur ini saja.
+5. Hasil dibaca per butir, bukan hanya total; selisih satu butir bukan bukti.
+
+### Perintah
+```
+python 30_uji_retrieval.py
+```
+Hasil: `full\hasil_retrieval.txt` dan `full\hasil_retrieval.json`. Butuh `GEMINI_API_KEY` di terminal. Skrip membuat `full\terjemah_netral_cache.json` (git-ignored).
