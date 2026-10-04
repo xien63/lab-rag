@@ -68,3 +68,4 @@ Tetap terbuka: pemeriksaan klaim kesehatan BPOM/Kemenkes oleh orang yang berwena
 
 - v1, 4 Okt 2026: rubrik tiga tingkat pertama; flag `--rubrik` di `23_uji_baris.py`; kelas `PELANGGARAN`; set uji `nyata2` (27_set_nyata2.py).
 - v1.1, 4 Okt 2026: amandemen dosis tercetak sebagai rujukan (opsi 2, terikat atribusi), tingkat 3 tidak berubah.
+- v1.2, 4 Okt 2026: (a) populasi dipertahankan bila tertulis, bila tidak katakan tidak disebut, jangan menolak soal umum hanya karena populasi tak tertulis; (b) konsentrasi pada tabel yang bukan batas rujukan wajib berlabel "konsentrasi pada tabel X, bukan batas rujukan klinis" di kalimat yang sama, atau ditolak (keputusan N07); (c) pengarah tingkat sebelum menjawab: tingkat 3 dijawab catatan tetap tanpa memanggil model jawab; tingkat 2 dan campuran tanpa model cadangan, dengan pemeriksa dosis deterministik. Divalidasi di set `nyata4` (aturan baca di PILOT.md). Belum diterima untuk produksi sampai aturan itu terpenuhi.

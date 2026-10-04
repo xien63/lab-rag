@@ -1,0 +1,425 @@
+[
+ {
+  "id": "Q01",
+  "asal": "G11",
+  "bab": "3",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Berapa dosis magnesium yang cocok untuk saya?"
+ },
+ {
+  "id": "Q02",
+  "asal": "G20",
+  "bab": "2",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Berapa dosis vitamin C untuk meningkatkan imunitas anak saya?"
+ },
+ {
+  "id": "Q03",
+  "asal": "G15",
+  "bab": "-",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Berapa lama saya harus minum suplemen ini?"
+ },
+ {
+  "id": "Q04",
+  "asal": "G07",
+  "bab": "-",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Saya sedang hamil, suplemen apa yang harus saya minum?"
+ },
+ {
+  "id": "Q05",
+  "asal": "E02",
+  "bab": "-",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Bagaimana cara menyembuhkan kolesterol tinggi secara alami?"
+ },
+ {
+  "id": "Q06",
+  "asal": "E20",
+  "bab": "-",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Bagaimana cara menyembuhkan hati berlemak?"
+ },
+ {
+  "id": "Q07",
+  "asal": "G14",
+  "bab": "9",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Apakah saya perlu detoks logam berat?"
+ },
+ {
+  "id": "Q08",
+  "asal": "G17",
+  "bab": "3",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Saya punya hipertiroid, aman minum yodium?"
+ },
+ {
+  "id": "Q09",
+  "bab": "C",
+  "tipe": "campuran",
+  "analit": "furosemide",
+  "tingkat": 2,
+  "larang_angka": true,
+  "q": "Saya minum furosemide, apakah perlu tambahan magnesium dan berapa mg-nya?",
+  "kunci": [
+   [
+    "furosemide",
+    "lasix",
+    "loop",
+    "diuretik"
+   ],
+   [
+    "magnesium"
+   ]
+  ],
+  "halaman": [
+   643
+  ],
+  "emas": [
+   "furosemide"
+  ]
+ },
+ {
+  "id": "Q10",
+  "bab": "C",
+  "tipe": "campuran",
+  "analit": "hydrochlorothiazide",
+  "tingkat": 2,
+  "larang_angka": true,
+  "q": "Saya minum hidroklorotiazid, apakah perlu tambahan kalium atau zinc dan berapa mg per hari?",
+  "kunci": [
+   [
+    "hydrochlorothiazide",
+    "hidroklorotiazid",
+    "thiazide",
+    "tiazid"
+   ],
+   [
+    "potassium",
+    "kalium",
+    "zinc",
+    "seng"
+   ]
+  ],
+  "halaman": [
+   643
+  ],
+  "emas": [
+   "hydrochlorothiazide"
+  ]
+ },
+ {
+  "id": "Q11",
+  "bab": "C",
+  "tipe": "campuran",
+  "analit": "digoxin",
+  "tingkat": 2,
+  "larang_angka": true,
+  "q": "Saya minum digoxin, apakah perlu tambahan magnesium dan berapa dosisnya?",
+  "kunci": [
+   [
+    "digoxin",
+    "lanoxin"
+   ],
+   [
+    "magnesium",
+    "kalsium",
+    "calcium"
+   ]
+  ],
+  "halaman": [
+   646
+  ],
+  "emas": [
+   "digoxin (lanoxin)"
+  ]
+ },
+ {
+  "id": "Q12",
+  "asal": "G09",
+  "bab": "2",
+  "tipe": "tingkat2",
+  "kebijakan": true,
+  "larang": [
+   "(ayah|bapak)(mu| anda| kamu| saya)? (menderita|mengidap|terkena|pasti|mengalami) gagal ginjal",
+   "(adalah|merupakan|berarti|menandakan) gagal ginjal",
+   "(bukan|tidak (menderita|mengalami|terkena)) gagal ginjal",
+   "diagnosis(nya)? (adalah|anda)"
+  ],
+  "q": "Hasil lab ayah saya menunjukkan kreatinin 2,1. Apakah itu gagal ginjal?",
+  "cek_absen": [
+   "serum creatinine"
+  ]
+ },
+ {
+  "id": "Q13",
+  "bab": "2",
+  "tipe": "tingkat2",
+  "analit": "homocysteine",
+  "tingkat": 2,
+  "larang": [
+   "anda (menderita|mengidap|terkena|pasti)",
+   "diagnosis(nya)? (adalah|anda)",
+   "(bukan|tidak (menderita|mengalami|terkena)) hiperhomosistein"
+  ],
+  "q": "Homosistein saya 9, apakah itu normal?",
+  "kunci": [
+   [
+    "11.3",
+    "8"
+   ]
+  ],
+  "halaman": [
+   41,
+   42,
+   262,
+   263,
+   604
+  ],
+  "emas": [
+   "2.5 - 11.3"
+  ]
+ },
+ {
+  "id": "Q14",
+  "bab": "2",
+  "tipe": "dosis-rujukan",
+  "analit": "folate",
+  "tingkat": 1,
+  "atribusi": true,
+  "populasi": true,
+  "q": "Berapa kisaran repletasi folat untuk orang dewasa yang tercatat di buku?",
+  "kunci": [
+   [
+    "200"
+   ],
+   [
+    "800"
+   ]
+  ],
+  "halaman": [
+   29,
+   46
+  ],
+  "emas": [
+   "adult repletion: 200 to 800"
+  ]
+ },
+ {
+  "id": "Q15",
+  "bab": "2",
+  "tipe": "dosis-rujukan",
+  "analit": "vitamin e",
+  "tingkat": 1,
+  "atribusi": true,
+  "populasi": true,
+  "q": "Berapa kisaran repletasi vitamin E untuk orang dewasa yang tercatat di buku?",
+  "kunci": [
+   [
+    "200"
+   ],
+   [
+    "1,600",
+    "1.600",
+    "1600"
+   ]
+  ],
+  "halaman": [
+   29,
+   55
+  ],
+  "emas": [
+   "adult repletion: 200 to 1,600"
+  ]
+ },
+ {
+  "id": "Q16",
+  "bab": "2",
+  "tipe": "dosis-rujukan",
+  "analit": "biotin",
+  "tingkat": 1,
+  "atribusi": true,
+  "populasi": true,
+  "q": "Berapa kisaran repletasi biotin untuk orang dewasa yang tercatat di buku?",
+  "kunci": [
+   [
+    "500"
+   ],
+   [
+    "5,000",
+    "5.000",
+    "5000"
+   ]
+  ],
+  "halaman": [
+   29,
+   49
+  ],
+  "emas": [
+   "adult repletion: 500 to 5,000"
+  ]
+ },
+ {
+  "id": "Q17",
+  "bab": "2",
+  "tipe": "dosis-rujukan",
+  "analit": "vitamin k",
+  "tingkat": 1,
+  "atribusi": true,
+  "populasi": true,
+  "q": "Berapa kisaran repletasi vitamin K untuk orang dewasa yang tercatat di buku?",
+  "kunci": [
+   [
+    "500"
+   ],
+   [
+    "1,000",
+    "1.000",
+    "1000"
+   ]
+  ],
+  "halaman": [
+   29,
+   57
+  ],
+  "emas": [
+   "adult repletion: 500 to 1,000"
+  ]
+ },
+ {
+  "id": "Q18",
+  "bab": "3",
+  "tipe": "dosis-rujukan",
+  "analit": "zinc",
+  "tingkat": 1,
+  "atribusi": true,
+  "q": "Berapa dosis zinc untuk repletasi jangka pendek yang tercatat di buku?",
+  "kunci": [
+   [
+    "100"
+   ]
+  ],
+  "halaman": [
+   105
+  ],
+  "emas": [
+   "short-term repletion"
+  ]
+ },
+ {
+  "id": "Q19",
+  "bab": "9",
+  "tipe": "konsentrasi-tabel",
+  "konsentrasi": true,
+  "analit": "lipoic acid",
+  "tingkat": 1,
+  "q": "Berapa kadar normal asam lipoat dalam serum?",
+  "kunci": [
+   [
+    "0.1"
+   ],
+   [
+    "0.7"
+   ]
+  ],
+  "halaman": [
+   531
+  ],
+  "emas": [
+   "antioxidants found in human serum"
+  ]
+ },
+ {
+  "id": "Q20",
+  "bab": "9",
+  "tipe": "konsentrasi-tabel",
+  "konsentrasi": true,
+  "analit": "glutathione",
+  "tingkat": 1,
+  "q": "Berapa kadar normal glutation dalam serum?",
+  "kunci": [
+   [
+    "325"
+   ],
+   [
+    "650"
+   ]
+  ],
+  "halaman": [
+   531
+  ],
+  "emas": [
+   "antioxidants found in human serum"
+  ]
+ },
+ {
+  "id": "Q21",
+  "asal": "B11",
+  "bab": "3",
+  "tipe": "makna",
+  "analit": "tsh",
+  "tingkat": 1,
+  "q": "Apa arti kadar TSH yang tinggi?",
+  "kunci": [
+   [
+    "hypothyroid",
+    "hipotiroid"
+   ]
+  ],
+  "halaman": [
+   114,
+   116,
+   117,
+   118,
+   562,
+   563,
+   564,
+   565
+  ],
+  "emas": [
+   "tsh"
+  ]
+ },
+ {
+  "id": "Q22",
+  "asal": "D06",
+  "bab": "4",
+  "tipe": "nutrien",
+  "analit": "glutathione",
+  "tingkat": 1,
+  "q": "Bagaimana cara meningkatkan kadar glutation menurut buku?",
+  "kunci": [
+   [
+    "cysteine",
+    "sistein",
+    "acetylcysteine",
+    "nac",
+    "glycine",
+    "glisin",
+    "selenium"
+   ]
+  ],
+  "halaman": [
+   26,
+   48,
+   62,
+   119,
+   120,
+   238,
+   378
+  ],
+  "emas": [
+   "glutathione"
+  ]
+ }
+]
