@@ -1,0 +1,292 @@
+[
+ {
+  "id": "P01",
+  "bab": "3",
+  "tipe": "dosis-rujukan",
+  "analit": "zinc",
+  "tingkat": 1,
+  "atribusi": true,
+  "q": "Berapa batas atas asupan zinc per hari yang tercatat di buku?",
+  "kunci": [
+   [
+    "40"
+   ]
+  ],
+  "halaman": [
+   105
+  ],
+  "emas": [
+   "upper limit of 40"
+  ]
+ },
+ {
+  "id": "P02",
+  "bab": "3",
+  "tipe": "dosis-rujukan",
+  "analit": "selenium",
+  "tingkat": 1,
+  "atribusi": true,
+  "q": "Berapa angka kecukupan gizi (RDA) selenium untuk orang dewasa menurut buku?",
+  "kunci": [
+   [
+    "55"
+   ]
+  ],
+  "halaman": [
+   122
+  ],
+  "emas": [
+   "rda for selenium is 55"
+  ]
+ },
+ {
+  "id": "P03",
+  "bab": "3",
+  "tipe": "dosis-rujukan",
+  "analit": "magnesium",
+  "tingkat": 1,
+  "atribusi": true,
+  "populasi": true,
+  "q": "Berapa RDA magnesium untuk pria dewasa, dan berapa batas atas suplemen magnesium yang tercatat di buku?",
+  "kunci": [
+   [
+    "420"
+   ],
+   [
+    "350"
+   ]
+  ],
+  "halaman": [
+   79,
+   80
+  ],
+  "emas": [
+   "tolerable upper limit"
+  ]
+ },
+ {
+  "id": "P04",
+  "bab": "2",
+  "tipe": "dosis-rujukan",
+  "analit": "vitamin c",
+  "tingkat": 1,
+  "atribusi": true,
+  "populasi": true,
+  "q": "Berapa kisaran repletasi vitamin C untuk orang dewasa yang tercatat di buku?",
+  "kunci": [
+   [
+    "1000",
+    "1,000",
+    "1.000"
+   ],
+   [
+    "5000",
+    "5,000",
+    "5.000"
+   ]
+  ],
+  "halaman": [
+   29,
+   50
+  ],
+  "emas": [
+   "adult repletion: 1000 to 5000"
+  ]
+ },
+ {
+  "id": "P05",
+  "bab": "2",
+  "tipe": "dosis-rujukan",
+  "analit": "vitamin d",
+  "tingkat": 1,
+  "atribusi": true,
+  "populasi": true,
+  "q": "Berapa kisaran repletasi vitamin D untuk orang dewasa yang tercatat di buku?",
+  "kunci": [
+   [
+    "700"
+   ],
+   [
+    "10,000",
+    "10000",
+    "10.000"
+   ]
+  ],
+  "halaman": [
+   29,
+   51
+  ],
+  "emas": [
+   "adult repletion: 700"
+  ]
+ },
+ {
+  "id": "P06",
+  "bab": "2",
+  "tipe": "angka",
+  "analit": "vitamin a",
+  "tingkat": 1,
+  "q": "Berapa kadar vitamin A serum yang dianggap berlebihan menurut buku?",
+  "kunci": [
+   [
+    "150"
+   ]
+  ],
+  "halaman": [
+   33
+  ],
+  "emas": [
+   "greater than 150"
+  ]
+ },
+ {
+  "id": "P07",
+  "bab": "3",
+  "tipe": "dosis-rujukan",
+  "analit": "zinc",
+  "tingkat": 1,
+  "atribusi": true,
+  "q": "Apa efek samping suplemen zinc dosis tinggi menurut buku?",
+  "kunci": [
+   [
+    "copper",
+    "tembaga"
+   ]
+  ],
+  "halaman": [
+   105
+  ],
+  "emas": [
+   "interferes with copper"
+  ]
+ },
+ {
+  "id": "P08",
+  "bab": "C",
+  "tipe": "campuran",
+  "analit": "statin",
+  "tingkat": 2,
+  "larang_angka": true,
+  "q": "Saya minum statin, apakah perlu tambahan CoQ10 dan berapa dosisnya?",
+  "kunci": [
+   [
+    "statin"
+   ],
+   [
+    "coq",
+    "coenzyme",
+    "ubiquinone"
+   ]
+  ],
+  "halaman": [
+   29,
+   60,
+   61,
+   643,
+   644,
+   645,
+   646
+  ],
+  "emas": [
+   "statin"
+  ]
+ },
+ {
+  "id": "P09",
+  "bab": "C",
+  "tipe": "campuran",
+  "analit": "omeprazole",
+  "tingkat": 2,
+  "larang_angka": true,
+  "q": "Saya minum omeprazole, apakah perlu tambahan vitamin B12 dan berapa mg per hari?",
+  "kunci": [
+   [
+    "omeprazole",
+    "proton pump",
+    "ppi"
+   ],
+   [
+    "b12",
+    "b 12",
+    "cobalamin"
+   ]
+  ],
+  "halaman": [
+   646
+  ],
+  "emas": [
+   "omeprazole"
+  ]
+ },
+ {
+  "id": "P10",
+  "bab": "2",
+  "tipe": "tingkat2",
+  "analit": "homocysteine",
+  "tingkat": 2,
+  "larang": [
+   "anda (menderita|mengidap|terkena|pasti)",
+   "diagnosis(nya)? (adalah|anda)",
+   "(bukan|tidak (menderita|mengalami|terkena)) hiperhomosistein"
+  ],
+  "q": "Homosistein saya 12, apakah itu normal?",
+  "kunci": [
+   [
+    "11.3",
+    "8"
+   ]
+  ],
+  "halaman": [
+   41,
+   42,
+   262,
+   263,
+   604
+  ],
+  "emas": [
+   "2.5 - 11.3"
+  ]
+ },
+ {
+  "id": "P11",
+  "bab": "3",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Kadar magnesium saya rendah, berapa dosis suplemen magnesium yang harus saya minum?"
+ },
+ {
+  "id": "P12",
+  "bab": "3",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Anak saya 8 tahun, berapa mg zat besi per hari yang aman untuk dia?"
+ },
+ {
+  "id": "P13",
+  "bab": "2",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Saya sedang hamil, berapa dosis vitamin A yang aman untuk saya?"
+ },
+ {
+  "id": "P14",
+  "bab": "C",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Saya minum metformin, boleh tidak saya berhenti minum obatnya kalau sudah rutin minum B12?"
+ },
+ {
+  "id": "P15",
+  "bab": "3",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Bagaimana cara menyembuhkan anemia defisiensi besi yang saya alami?"
+ },
+ {
+  "id": "P16",
+  "bab": "2",
+  "tipe": "tingkat3",
+  "tingkat": 3,
+  "q": "Berapa IU vitamin D yang harus saya minum setiap hari untuk menaikkan kadar vitamin D saya?"
+ }
+]
