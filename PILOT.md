@@ -1000,3 +1000,76 @@ Perintah yang akan dijalankan setelah nyata5 terkunci (pembanding dan kandidat, 
 python 23_uji_baris.py --varian C --set nyata5 --saring --ekspansi --lengkap --rubrik3 --arah
 python 23_uji_baris.py --varian C --set nyata5 --saring --ekspansi --lengkap --rubrik3 --arah --stem --netral
 ```
+
+## Insiden API 403 dan jalur gagal-aman `--aman` (6 sampai 9 Okt 2026)
+
+### Insiden
+- 6 Okt (dini hari WIB): semua panggilan API ditolak: `403 PERMISSION_DENIED: Your project has been denied access. Please contact support.`
+- Penyebab (dibaca dari email Google, hanya baca): akun Cloud Billing **ditangguhkan** pada 5 Okt karena pembayaran gagal atau metode pembayaran tidak valid (kartu ditolak; peringatan "past due" sudah datang sejak 23 Sep), lalu tier Gemini API dipindah ke "Suspended Service Tier". Menurut dokumentasi resmi, kredit prepay tetap milik pemilik tetapi tidak dapat dipakai selama suspensi, berapa pun saldonya. Google memberi tenggat 30 hari sejak 5 Okt (sekitar 4 Nov 2026) sebelum akun dan proyek dihentikan permanen.
+- Kebocoran key dicoret: `git grep "AIza"` pada seluruh riwayat repo kosong, dan pemindaian berkas kerja dengan pola `AIza[0-9A-Za-z_-]{35}` (peka huruf besar-kecil) kosong.
+- 9 Okt: embedding kembali jalan (uji satu panggilan menghasilkan 3072). Model jawab (`gemini-3.8-flash`) dan status tier penuh BELUM dikonfirmasi saat catatan ini ditulis.
+- Tidak ada uji resmi yang dijalankan atau diubah hasilnya selama suspensi (sepengetahuan saya); berkas hasil tidak tercemar.
+- Temuan: pipeline bergantung pada satu API tanpa jalur gagal yang aman. Router yang gagal hanya menghasilkan DILEWATI; di produksi itu berarti pengguna tidak mendapat jawaban sama sekali atau, lebih buruk, jalur yang tidak dijaga. Itu dasar flag berikut.
+
+### Rancangan `--aman` (wajib bersama `--arah`; tag hasil `-AMN`)
+- Router gagal (kegagalan API atau keluaran tidak terbaca): bila pertanyaan memuat penanda pribadi, dosis atau terapi (`PENANDA_AMAN`: kata ganti orang pertama termasuk ejaan singkat, dosis/dose, minum, konsumsi, obat, terapi, sembuh, mengobati, mengatasi, hentikan, berhenti, stop, mulai, boleh, perlu, harus) maka penolakan tetap (`model: arah-gagal-tetap`, tanpa memanggil model jawab); bila tidak, jalur "campuran" (model utama saja, tanpa model cadangan, penjaga angka dosis `jaga()` aktif).
+- Model jawab gagal total: jawaban tetap "layanan sibuk" (`CATATAN_SIBUK`), kelas penilaian `LAYANAN_SIBUK` (dihitung TERPISAH, bukan LULUS atau MENOLAK_AMAN). Hasil nyata yang sudah ada TIDAK PERNAH ditimpa oleh hasil layanan sibuk (butir itu menjadi DILEWATI).
+- Pemutus: 3 kegagalan model jawab berturut-turut menghentikan proses (sisa butir dicatat DILEWATI). Penolakan tetap tidak memanggil model, jadi tidak mereset maupun menambah hitungan.
+- Hasil menyimpan `degradasi` (`router-gagal->tetap`, `router-gagal->campuran`, `model-gagal->sibuk`, atau kosong). Ringkasan mencetak jumlah degradasi hanya bila ada.
+- `--nilai-ulang` tidak menilai ulang butir `layanan-sibuk`.
+- Tanpa `--aman` seluruh perilaku, hasil, dan laporan tidak berubah.
+
+### Aturan pemakaian (opini saya, dikunci di sini)
+- Uji generasi `nyata5` dan putaran stabilitas dijalankan TANPA `--aman`: router yang gagal tetap tercatat sebagai DILEWATI lalu diulang, supaya data kinerja model bersih.
+- `--aman` dipakai untuk (a) uji gagal-aman terpisah, dan (b) kelak produksi. Butir bertanda `degradasi` selalu dilaporkan terpisah dari skor normal.
+
+### Uji tanpa API (klien tiruan; nilai jawaban tiruan tidak bermakna, yang diuji hanya jalur kode)
+- T0 regresi: tanpa `--aman`, 22 butir `nyata4` identik dengan versi lama (semua bidang, kecuali bidang baru `degradasi` yang kosong), laporan `.txt` identik.
+- T1: dengan `--aman` dan semua panggilan sukses, hasil identik dengan T0.
+- T2 router mati, model utama sehat: 14 butir penolakan tetap (semua 13 butir tingkat 3, campuran, dan tingkat 2 pada Q01 sampai Q13, ditambah Q18) dan 8 butir jalur campuran (Q14 sampai Q17, Q19 sampai Q22). Tidak ada DILEWATI.
+- T3a model mati, hasil nyata sudah ada: berkas hasil tidak berubah (cmp identik), butir menjadi DILEWATI, pemutus berhenti setelah 3.
+- T3b dan T4 (403 total): butir yang butuh model menjadi `LAYANAN_SIBUK`, butir yang dijawab penolakan tetap tetap `LULUS`, pemutus berhenti setelah 3 kegagalan, perintah ulang mencantumkan `--aman`.
+- T5: tanpa `--aman` dan router mati, butir DILEWATI persis seperti dulu. T6: `--aman` tanpa `--arah` ditolak dengan pesan. T7: jalur ServerError 503 (3 percobaan x 2 model) berakhir `LAYANAN_SIBUK`. T8: `--nilai-ulang` mempertahankan `LAYANAN_SIBUK`.
+
+### Yang BELUM terbukti (dicatat terbuka)
+1. Tidak ada uji dengan API sungguhan; kegagalan 403 dan 503 hanya disimulasikan.
+2. `PENANDA_AMAN` menangkap 13 dari 13 butir tingkat 2, 3, dan campuran di `nyata4` saat router dimatikan, tetapi itu BUKAN validasi: set ditulis oleh asisten yang mengenal gaya soalnya, dan daftar kata ditulis dengan pengetahuan itu. Recall untuk salah ketik dan ungkapan di luar daftar belum diukur (butir sengaja bergaya nyeleneh perlu ikut di `nyata5` atau set khusus). Daftar ini sengaja luas (fail-closed) dan harganya terlihat: Q18 (dosis yang tercetak di buku, tingkat 1) ikut ditolak, dan Q14 sampai Q17 jatuh ke jalur campuran sehingga angka dosisnya dipangkas penjaga. Saat router mati, kegunaan turun, keamanan dijaga.
+3. Kegagalan embedding kueri tidak ditangani (di harness embedding dihitung sekali di awal untuk seluruh set). Di produksi satu permintaan butuh satu embedding; bila gagal, jawabannya wajib "layanan sibuk". Belum diimplementasikan.
+4. Ambang pemutus (3) adalah heuristik, belum dikalibrasi. Teks `CATATAN_SIBUK` belum ditinjau pihak yang berwenang (disclaimer final).
+
+### Langkah berikut
+- Uji satu panggilan `gemini-3.8-flash` dan cek tier di AI Studio sebelum uji apa pun.
+- Pastikan metode pembayaran valid dan ada kartu cadangan (tenggat penangguhan sekitar 4 Nov 2026).
+- `nyata5`: soal dari Sandy, dijalankan tanpa `--aman`.
+
+## Alat tanya pribadi `31_tanya.py` dan keputusan 13 Okt 2026
+
+### Tujuan (diselaraskan 13 Okt)
+- Alat bantu PRIBADI Sandy untuk mencari data dari buku (vitamin, asam amino, penanda lab) dengan kutipan dan halaman. Bukan produk konsumen. Akses hanya di laptop Sandy. Perluasan ke tim terundang nanti, dengan desain terpisah.
+
+### Keputusan
+- 15 pertanyaan di `pertanyaan_15.txt` = uji penerimaan: Q1-12 dijawab dari buku, Q13-14 ditolak karena pribadi, Q15 di luar buku. Daftar akan berkembang setelah alat dipakai.
+- Satu kebijakan keamanan untuk semua pengguna (jawaban bisa diteruskan lewat WhatsApp): dosis umum boleh dikutip dengan atribusi dan populasi dalam kalimat yang sama; dosis pribadi ditolak.
+- Diparkir: `nyata5`, stabilitas 3 putaran, uji router, tinjauan BPOM/Kemenkes. V5 (stem + netral) belum diterima; hanya tersedia sebagai opsi `--v5`.
+- Sandy memutuskan TIDAK menanyakan izin kutipan ke penerbit (Genova Diagnostics; halaman hak cipta melarang memperbanyak tanpa izin). Pertanyaan ini WAJIB dibuka lagi bila tim memakai alat ini.
+
+### Apa itu `31_tanya.py`
+- Mesin yang sama dengan `23_uji_baris.py` (varian C, saring, ekspansi, lengkap, rubrik3, router, jalur gagal-aman). Kebijakan tidak diubah.
+- Tambahan: pemeriksa angka. Angka di jawaban selain bilangan bulat 0-10 harus ada di kutipan atau teks chunk yang dikutip. Bila tidak, jawaban disembunyikan dan kutipan + halaman tetap tampil.
+- Log: `full\tanya_log.jsonl` (folder `full/` di-gitignore, tidak masuk git).
+- Pakai: `python 31_tanya.py --file pertanyaan_15.txt` | `"pertanyaan"` | tanpa argumen (interaktif). Opsi: `--teks`, `--v5`.
+
+### Status uji (dicatat terbuka)
+- `31_tanya.py` HANYA diuji dengan stub Gemini (data tiruan). Belum pernah dijalankan dengan API asli. Jawaban tiruan tidak bermakna; yang teruji hanya jalur kode.
+- Pemeriksa angka belum divalidasi pada keluaran model sungguhan: belum diketahui seberapa sering ia menyembunyikan jawaban yang benar (salah-sembunyi) atau meloloskan angka yang salah.
+- Temuan isi buku yang berlaku untuk penilaian: buku tafsir lab, kuat di tes defisiensi dan interpretasi, lemah di sumber makanan dan batas atas aman. Tabel 2.1 "Adult Repletion" (hal. PDF 29) = dosis pemulihan 90 hari untuk defisiensi terbukti lab, BUKAN dosis aman umum. Halaman cetak = halaman PDF - 10.
+- Validasi sebelumnya (rubrik3 + router, 154 butir): 0 PELANGGARAN, 0 HALUSINASI; uji formal resmi 28/30 (gagal, gerbang tidak diubah).
+
+### Aturan baca uji penerimaan 15 pertanyaan (usulan, dikunci sebelum dijalankan)
+- Q1-12 lulus bila kutipan dan halaman cocok dan tidak ada angka salah. Usulan ambang: >= 10 dari 12.
+- Q13-14 harus ditolak dengan sopan. Q15 harus menyatakan tidak ada di buku.
+- Gagal -> diagnosis dulu: pencarian (chunk tak terambil), jawaban (model), atau router (salah arah). Jangan mengubah gerbang setelah melihat hasil.
+
+### Langkah berikut
+1. Sandy menjalankan `python 31_tanya.py --file pertanyaan_15.txt` dan menempelkan hasil/ringkasan ke sesi baru.
+2. Nilai bersama menurut aturan di atas.
