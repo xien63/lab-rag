@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tanya Buku Lab</title>
+<style>
+:root{
+  --bg:#f6f3ee; --panel:#fffdf9; --ink:#23201b; --mute:#6f675c; --line:#e3dcd0;
+  --accent:#2f5d50; --accent-ink:#ffffff; --ok:#2f5d50; --ok-bg:#e6f0ec;
+  --warn:#8a5a00; --warn-bg:#fbf0d9; --stop:#8b2e2e; --stop-bg:#f7e4e2; --quote-bg:#f1ece3;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#16140f; --panel:#1f1c16; --ink:#ece6da; --mute:#a39a8b; --line:#3a352b;
+    --accent:#7fb5a3; --accent-ink:#10201a; --ok:#8cc4b1; --ok-bg:#1c2a25;
+    --warn:#e0b45a; --warn-bg:#2d2512; --stop:#e59a95; --stop-bg:#2e1a19; --quote-bg:#262218;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16140f; --panel:#1f1c16; --ink:#ece6da; --mute:#a39a8b; --line:#3a352b;
+  --accent:#7fb5a3; --accent-ink:#10201a; --ok:#8cc4b1; --ok-bg:#1c2a25;
+  --warn:#e0b45a; --warn-bg:#2d2512; --stop:#e59a95; --stop-bg:#2e1a19; --quote-bg:#262218;
+}
+*{box-sizing:border-box}
+button{font-family:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Segoe UI",system-ui,-apple-system,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 16px 56px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px}
+@media (max-width:820px){.wrap{grid-template-columns:1fr}}
+header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font:600 26px/1.2 Georgia,"Times New Roman",serif;margin:0}
+.sub{color:var(--mute);font-size:14px}
+.tema{background:none;border:1px solid var(--line);color:var(--mute);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:13px}
+.kotak{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+textarea{width:100%;min-height:84px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;background:var(--bg);color:var(--ink)}
+textarea:focus,button:focus-visible,.chip:focus-visible,.riw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.baris{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap}
+.hint{color:var(--mute);font-size:13px}
+button.utama{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:10px 20px;font-weight:600;font-size:15px;font-family:inherit;cursor:pointer}
+button.utama:disabled{opacity:.55;cursor:wait}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--accent)}
+.label-chips{color:var(--mute);font-size:13px;margin-top:16px}
+#hasil{margin-top:20px}
+.kartu{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px}
+.q{font:600 17px/1.4 Georgia,serif;margin:0 0 10px}
+.badge{display:inline-block;font-size:13px;font-weight:600;border-radius:999px;padding:3px 12px;margin-bottom:12px}
+.b-ok{background:var(--ok-bg);color:var(--ok)} .b-no{background:var(--warn-bg);color:var(--warn)} .b-stop{background:var(--stop-bg);color:var(--stop)}
+.jawab{white-space:pre-wrap;margin:0 0 12px}
+.callout{border-left:4px solid var(--warn);background:var(--warn-bg);color:var(--ink);padding:10px 14px;border-radius:0 10px 10px 0;margin:12px 0;font-size:15px}
+.callout.stop{border-left-color:var(--stop);background:var(--stop-bg)}
+.catatan{color:var(--mute);font-size:15px;white-space:pre-wrap;margin:8px 0}
+h3{font-weight:600;font-size:12px;line-height:1;font-family:inherit;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:16px 0 6px}
+blockquote{margin:0;background:var(--quote-bg);border-radius:10px;padding:10px 14px;font:15px/1.55 Georgia,serif;white-space:pre-wrap}
+.hal{display:flex;flex-wrap:wrap;gap:6px}
+.hal span{border:1px solid var(--line);border-radius:8px;padding:2px 10px;font-size:13px}
+.alat{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.kecil{background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:5px 12px;font-size:13px;cursor:pointer}
+.kecil:hover{border-color:var(--accent)}
+.teks-chunk{margin-top:8px;font-size:13px;white-space:pre-wrap;background:var(--quote-bg);border-radius:10px;padding:10px 12px;max-height:260px;overflow:auto}
+.disc{color:var(--mute);font-size:12.5px;margin-top:10px}
+aside h2{font-weight:600;font-size:13px;line-height:1;font-family:inherit;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:4px 0 10px}
+.riw{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);padding:9px 2px;cursor:pointer;font-size:14px}
+.riw small{display:block;color:var(--mute);font-size:12px}
+.titik{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--ok)}
+.titik.no{background:var(--warn)} .titik.stop{background:var(--stop)}
+.mute{color:var(--mute);font-size:14px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.tab{background:none;border:0;border-bottom:2px solid transparent;color:var(--mute);padding:6px 10px;cursor:pointer;font-size:14px;font-weight:600}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.cari{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;font-size:14px;background:var(--bg);color:var(--ink);margin-bottom:8px}
+.tocbox{max-height:70vh;overflow:auto;font-size:14px;line-height:1.4;padding-right:4px}
+.tocbox details{margin:0}
+.tocbox summary{cursor:pointer;list-style:none}
+.tocbox summary::-webkit-details-marker{display:none}
+.tocbox summary{display:flex;align-items:flex-start}
+.tocbox summary .panah{flex:none;width:26px;padding:3px 0;text-align:center;color:var(--mute)}
+.tocbox summary .panah::before{content:"\25B8"}
+.tocbox details[open]>summary .panah::before{content:"\25BE"}
+.tocbox .anak{margin-left:12px;border-left:1px solid var(--line);padding-left:6px}
+.trow{display:flex;gap:6px;align-items:baseline;padding:3px 0}
+.trow a{color:var(--ink);text-decoration:none;flex:1;min-width:0}
+.trow a:hover{text-decoration:underline;color:var(--accent)}
+.trow .pg{color:var(--mute);font-size:12px;white-space:nowrap}
+.trow .tj{background:none;border:1px solid var(--line);color:var(--mute);border-radius:6px;padding:0 6px;font-size:12px;cursor:pointer}
+.trow .tj:hover{border-color:var(--accent);color:var(--accent)}
+.trow.d0>a{font-weight:600}
+.hal a{color:inherit;text-decoration:none}
+.hal a:hover{border-color:var(--accent)}
+.hal span:has(a):hover{border-color:var(--accent)}
+footer{grid-column:1/-1;color:var(--mute);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Tanya Buku Lab</h1>
+      <div class="sub">Lord &amp; Bralley, <em>Laboratory Evaluations for Integrative and Functional Medicine</em> &middot; alat pribadi, jalan di laptop ini saja</div>
+    </div>
+    <button class="tema" id="tema" type="button">Tema</button>
+  </header>
+
+  <main>
+    <div class="kotak">
+      <label for="q" class="hint">Tulis pertanyaan tentang isi buku (Indonesia atau Inggris)</label>
+      <textarea id="q" maxlength="500" placeholder="Contoh: Bagaimana buku menilai status vitamin D?"></textarea>
+      <div class="baris">
+        <span class="hint">Ctrl+Enter untuk bertanya &middot; maks 500 karakter</span>
+        <button class="utama" id="kirim" type="button">Tanya</button>
+      </div>
+      <div class="label-chips">Contoh pertanyaan</div>
+      <div class="chips" id="contoh"></div>
+    </div>
+    <div id="hasil" aria-live="polite"></div>
+  </main>
+
+  <aside>
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-riw" role="tab" aria-selected="true" type="button">Riwayat</button>
+      <button class="tab" id="tab-toc" role="tab" aria-selected="false" type="button">Daftar isi</button>
+    </div>
+    <div id="panel-riw"><div id="riwayat"><div class="mute">Belum ada.</div></div></div>
+    <div id="panel-toc" hidden>
+      <input class="cari" id="cari" type="search" placeholder="Cari judul bab, tabel, atau topik" aria-label="Cari di daftar isi">
+      <div class="tocbox" id="toc"><div class="mute">Memuat…</div></div>
+      <div class="disc">Klik judul untuk membuka halaman PDF di tab baru. Tombol ? mengisi kotak tanya dengan topik itu.</div>
+    </div>
+  </aside>
+
+  <footer>
+    Jawaban hanya merangkum kutipan dari buku dan bisa keliru atau tidak lengkap. Selalu cocokkan dengan halaman buku. Ini bukan nasihat medis pribadi; keputusan dosis dan pengobatan dibicarakan dengan dokter.
+    Halaman cetak dihitung kira-kira halaman PDF dikurangi 10.
+  </footer>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const buku = "Lord & Bralley, Laboratory Evaluations for Integrative and Functional Medicine (Rev. 2nd ed.)";
+let terakhir = null;
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // selalu textContent: teks buku/model tidak pernah jadi HTML
+  return e;
+}
+
+// tema
+try { const t = localStorage.getItem("tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+$("tema").addEventListener("click", () => {
+  const sekarang = document.documentElement.dataset.theme ||
+    (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const baru = sekarang === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = baru;
+  try { localStorage.setItem("tema", baru); } catch (e) {}
+});
+
+function kelasStatus(h) {
+  if (h.tersembunyi) return ["b-no", "Jawaban disembunyikan: ada angka yang tidak ditemukan di kutipan"];
+  if (h.tingkat === "3") return ["b-stop", "Tidak dijawab: pertanyaan pribadi atau keputusan pengobatan"];
+  if (h.canAnswer) return ["b-ok", "Dijawab dari buku"];
+  return ["b-no", "Tidak dijawab dari buku"];
+}
+
+function teksSalin(h) {
+  const baris = ["Pertanyaan: " + h.q, ""];
+  if (h.answer) baris.push("Jawaban: " + h.answer, "");
+  if (h.label) baris.push(h.label, "");
+  if (h.halaman.length) {
+    baris.push("Sumber: " + buku + ", hal. cetak kira-kira " +
+      h.halaman.map((p) => (p.cetak === null ? "awal buku" : p.cetak) + " (PDF " + p.pdf + ")").join(", ") + ".");
+  }
+  baris.push("Catatan: ringkasan dari buku referensi, bukan nasihat medis pribadi.");
+  return baris.join("\n");
+}
+
+function tampil(h) {
+  const k = el("div", "kartu");
+  k.appendChild(el("p", "q", h.q));
+  const [kls, label] = kelasStatus(h);
+  k.appendChild(el("span", "badge " + kls, label));
+
+  if (h.answer) k.appendChild(el("p", "jawab", h.answer));
+  if (h.label) k.appendChild(el("div", "callout", h.label));
+  if (h.tersembunyi) {
+    k.appendChild(el("div", "callout stop",
+      "Angka " + h.angka_hilang.join(", ") + " ada di ringkasan model tetapi tidak ditemukan di sumber yang dikutip. " +
+      "Baca kutipan di bawah dan periksa sendiri."));
+  }
+  if (h.dipangkas) k.appendChild(el("div", "callout", "Sebagian angka dosis dipangkas oleh penjaga keamanan."));
+  if (h.note) k.appendChild(el("p", "catatan", h.note));
+
+  if (h.quote) {
+    k.appendChild(el("h3", "", "Kutipan buku"));
+    k.appendChild(el("blockquote", "", h.quote));
+  }
+  if (h.halaman.length) {
+    k.appendChild(el("h3", "", "Halaman sumber"));
+    const w = el("div", "hal");
+    h.halaman.forEach((p) => {
+      const c = el("span");
+      const a = el("a", "", (p.cetak === null ? "awal buku" : "cetak ±" + p.cetak) + " · PDF " + p.pdf);
+      a.href = "/buku.pdf#page=" + p.pdf; a.target = "_blank"; a.rel = "noopener";
+      a.title = "Buka halaman ini di PDF buku";
+      c.appendChild(a); w.appendChild(c);
+    });
+    k.appendChild(w);
+  }
+
+  const alat = el("div", "alat");
+  const salin = el("button", "kecil", "Salin (jawaban + sumber)");
+  salin.type = "button";
+  salin.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(teksSalin(h)); salin.textContent = "Tersalin"; }
+    catch (e) { salin.textContent = "Gagal menyalin"; }
+    setTimeout(() => (salin.textContent = "Salin (jawaban + sumber)"), 1800);
+  });
+  alat.appendChild(salin);
+  if (h.chunks.length) {
+    const lihat = el("button", "kecil", "Lihat teks lengkap yang dikutip");
+    lihat.type = "button";
+    const area = el("div");
+    let terbuka = false;
+    lihat.addEventListener("click", async () => {
+      terbuka = !terbuka;
+      area.textContent = "";
+      lihat.textContent = terbuka ? "Sembunyikan teks lengkap" : "Lihat teks lengkap yang dikutip";
+      if (!terbuka) return;
+      for (const id of h.chunks) {
+        try {
+          const r = await fetch("/api/chunk?id=" + encodeURIComponent(id));
+          const d = await r.json();
+          area.appendChild(el("h3", "", id));
+          area.appendChild(el("div", "teks-chunk", d.teks || d.error || ""));
+        } catch (e) { area.appendChild(el("div", "mute", "Gagal memuat " + id)); }
+      }
+    });
+    alat.appendChild(lihat);
+    k.appendChild(alat);
+    k.appendChild(area);
+  } else {
+    k.appendChild(alat);
+  }
+  k.appendChild(el("div", "disc", "Jalur: tingkat " + h.tingkat + (h.degradasi ? " [" + h.degradasi + "]" : "") + " · " + h.model));
+  const wadah = $("hasil");
+  wadah.textContent = "";
+  wadah.appendChild(k);
+  k.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function tanya() {
+  const q = $("q").value.trim();
+  if (!q) { $("q").focus(); return; }
+  const tombol = $("kirim");
+  tombol.disabled = true; tombol.textContent = "Mencari di buku…";
+  try {
+    const r = await fetch("/api/tanya", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q }) });
+    const d = await r.json();
+    if (!r.ok) {
+      const w = $("hasil"); w.textContent = "";
+      const k = el("div", "kartu");
+      k.appendChild(el("span", "badge b-no", r.status === 503 ? "Layanan sibuk" : "Tidak bisa diproses"));
+      k.appendChild(el("p", "catatan", d.pesan || d.error || "Terjadi kesalahan."));
+      w.appendChild(k);
+    } else {
+      terakhir = d; tampil(d); muatRiwayat();
+    }
+  } catch (e) {
+    const w = $("hasil"); w.textContent = "";
+    const k = el("div", "kartu");
+    k.appendChild(el("span", "badge b-no", "Server tidak terjangkau"));
+    k.appendChild(el("p", "catatan", "Pastikan jendela PowerShell yang menjalankan 31_tanya.py --web masih terbuka."));
+    w.appendChild(k);
+  } finally {
+    tombol.disabled = false; tombol.textContent = "Tanya";
+  }
+}
+
+async function muatContoh() {
+  try {
+    const d = await (await fetch("/api/contoh")).json();
+    const w = $("contoh"); w.textContent = "";
+    d.forEach((q) => {
+      const c = el("button", "chip", q); c.type = "button";
+      c.addEventListener("click", () => { $("q").value = q; $("q").focus(); });
+      w.appendChild(c);
+    });
+  } catch (e) {}
+}
+
+async function muatRiwayat() {
+  try {
+    const d = await (await fetch("/api/riwayat")).json();
+    const w = $("riwayat"); w.textContent = "";
+    if (!d.length) { w.appendChild(el("div", "mute", "Belum ada.")); return; }
+    d.forEach((r) => {
+      const b = el("button", "riw"); b.type = "button";
+      const titik = el("span", "titik" + (r.tingkat === "3" ? " stop" : r.canAnswer ? "" : " no"));
+      b.appendChild(titik);
+      b.appendChild(document.createTextNode(r.q.length > 70 ? r.q.slice(0, 70) + "…" : r.q));
+      b.appendChild(el("small", "", (r.waktu || "").replace("T", " ")));
+      b.addEventListener("click", () => { $("q").value = r.q; $("q").focus(); });
+      w.appendChild(b);
+    });
+  } catch (e) {}
+}
+
+// ---- tab Riwayat / Daftar isi
+function pilihTab(nama) {
+  const toc = nama === "toc";
+  $("tab-riw").setAttribute("aria-selected", String(!toc));
+  $("tab-toc").setAttribute("aria-selected", String(toc));
+  $("panel-riw").hidden = toc; $("panel-toc").hidden = !toc;
+  if (toc) muatToc();
+}
+$("tab-riw").addEventListener("click", () => pilihTab("riw"));
+$("tab-toc").addEventListener("click", () => pilihTab("toc"));
+
+// ---- daftar isi (dari full\daftar_isi.json lewat /api/toc)
+let tocData = null;
+const cetak = (p) => (p > 10 ? "cetak ±" + (p - 10) + " · " : "") + "PDF " + p;
+function baris(e, bab) {
+  const r = el("div", "trow d" + Math.min(e.d, 3));
+  const a = el("a", "", e.t);
+  a.href = "/buku.pdf#page=" + e.p; a.target = "_blank"; a.rel = "noopener";
+  r.appendChild(a);
+  if (bab) r.appendChild(el("span", "pg", bab));
+  r.appendChild(el("span", "pg", cetak(e.p)));
+  const tj = el("button", "tj", "?"); tj.type = "button"; tj.title = "Isi kotak tanya dengan topik ini";
+  tj.addEventListener("click", () => { $("q").value = "Apa yang dibahas buku tentang \"" + e.t + "\"?"; $("q").focus(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+  r.appendChild(tj);
+  return r;
+}
+function bangunPohon(data) {
+  const akar = el("div"); const tumpuk = [{ d: -1, node: akar }];
+  data.forEach((e, i) => {
+    while (tumpuk[tumpuk.length - 1].d >= e.d) tumpuk.pop();
+    const induk = tumpuk[tumpuk.length - 1].node;
+    const punyaAnak = i + 1 < data.length && data[i + 1].d > e.d;
+    if (punyaAnak) {
+      const det = el("details"); const sum = el("summary");
+      const pn = el("span", "panah"); sum.appendChild(pn);
+      const b = baris(e); b.style.flex = "1"; b.style.minWidth = "0";
+      sum.appendChild(b); det.appendChild(sum);
+      const anak = el("div", "anak"); det.appendChild(anak);
+      induk.appendChild(det); tumpuk.push({ d: e.d, node: anak });
+    } else {
+      induk.appendChild(baris(e));
+    }
+  });
+  return akar;
+}
+function tampilToc() {
+  const kotak = $("toc"); kotak.textContent = "";
+  const kata = $("cari").value.trim().toLowerCase();
+  if (kata.length < 2) { kotak.appendChild(bangunPohon(tocData)); return; }
+  const cocok = []; let bab = "";
+  tocData.forEach((e) => { if (e.d === 0) bab = e.t; if (e.t.toLowerCase().includes(kata)) cocok.push([e, bab]); });
+  if (!cocok.length) { kotak.appendChild(el("div", "mute", "Tidak ada judul yang cocok.")); return; }
+  cocok.slice(0, 100).forEach(([e, b]) => kotak.appendChild(baris(e, b.length > 22 ? b.slice(0, 22) + "…" : b)));
+  if (cocok.length > 100) kotak.appendChild(el("div", "mute", "Menampilkan 100 dari " + cocok.length + " hasil; persempit kata kunci."));
+}
+async function muatToc() {
+  if (tocData) return;
+  try {
+    const d = await (await fetch("/api/toc")).json();
+    if (!Array.isArray(d) || !d.length) {
+      $("toc").textContent = "";
+      $("toc").appendChild(el("div", "mute", "Daftar isi belum dibuat. Jalankan di PowerShell: python 32_daftar_isi.py (butuh pip install pypdf), lalu muat ulang halaman ini."));
+      return;
+    }
+    tocData = d; tampilToc();
+  } catch (e) { $("toc").textContent = "Gagal memuat daftar isi."; }
+}
+let tundaCari = null;
+$("cari").addEventListener("input", () => { clearTimeout(tundaCari); tundaCari = setTimeout(() => { if (tocData) tampilToc(); }, 150); });
+
+$("kirim").addEventListener("click", tanya);
+$("q").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); tanya(); } });
+muatContoh(); muatRiwayat();
+</script>
+</body>
+</html>

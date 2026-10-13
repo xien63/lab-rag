@@ -16,6 +16,7 @@ Pakai:
   python 31_tanya.py "pertanyaan"        # satu pertanyaan
   python 31_tanya.py --file pertanyaan_15.txt   # banyak pertanyaan, satu per baris
   opsi: --teks (cetak teks lengkap chunk yang dikutip)  --v5
+  python 31_tanya.py --web                # antarmuka web lokal di http://127.0.0.1:8765 (opsi: --port N, --no-open)
 """
 import json, os, sys, pathlib, re, math, collections, time, datetime
 import numpy as np
@@ -514,6 +515,19 @@ def catat(h):
                note=h["ans"].get("note"), halaman=h["pages"], chunk=h["kutip"], angka_tak_terverifikasi=h["hilang"], dipangkas=h["dipangkas"], label_repletion=h.get("label_repletion", False), v5=V5)
     with LOG.open("a", encoding="utf-8") as f:
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+if "--web" in sys.argv:   # antarmuka web lokal (web_ui.py + web_ui.html); mesin di atas tidak diubah
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import web_ui
+    try:
+        port = int(sys.argv[sys.argv.index("--port") + 1]) if "--port" in sys.argv else 8765
+    except (ValueError, IndexError):
+        raise SystemExit("--port harus diikuti angka, contoh: --port 8765")
+    web_ui.jalankan(tanya, catat, LABEL_REPLETION, LOG, ROOT / "pertanyaan_15.txt",
+                    lambda cid: texts[idx[cid]] if cid in meta else None,
+                    port=port, buka="--no-open" not in sys.argv,
+                    toc_path=BASE / "daftar_isi.json", pdf_path=ROOT / "source.pdf")
+    raise SystemExit(0)
 
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 if "--file" in sys.argv:
