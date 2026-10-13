@@ -1073,3 +1073,29 @@ python 23_uji_baris.py --varian C --set nyata5 --saring --ekspansi --lengkap --r
 ### Langkah berikut
 1. Sandy menjalankan `python 31_tanya.py --file pertanyaan_15.txt` dan menempelkan hasil/ringkasan ke sesi baru.
 2. Nilai bersama menurut aturan di atas.
+
+### Hasil uji penerimaan pertama dengan API asli (13 Okt 2026, 09:40-09:41 WIB)
+- Ini panggilan API asli pertama untuk `31_tanya.py` (`gemini-3.8-flash`). Klien, model, dan tier berfungsi. Log: `full\tanya_log.jsonl`.
+- Q1-12: 12 dari 12 lolos menurut aturan (ambang >= 10). `angka_tak_terverifikasi` kosong dan `dipangkas` false di semua baris.
+- Angka dan halaman dicocokkan dengan teks PDF untuk: Q1 (Tabel 2.7, hal. PDF 42, lima nilai persis), Q4 (hal. PDF 14), Q6 (Tabel 12.6, hal. PDF 614), Q7 (Tabel 2.10, hal. PDF 54, 75-250 nmol/L = Sufficient), Q10 (tabel interaksi obat, hal. PDF 646), Q11 (Adult Repletion 1000 to 5000 mg/d, hal. PDF 50).
+- BELUM dicocokkan sampai tingkat halaman: Q2, Q5, Q8, Q9, dan bagian jawaban Q3 dan Q6 yang berasal dari chunk selain kutipan utama.
+- Q9 sebenarnya jawaban dari satu laporan kasus pasien (dilabeli jujur oleh model), bukan daftar periksa umum. Dihitung lolos longgar.
+- Q12: canAnswer false, tanpa angka karangan. Q13-14: ditolak tetap (`arah-tetap`), model jawab tidak dipanggil.
+- Q15 lama (pertanyaan campuran: makanan kaya triptofan + produk Fitsol): TIDAK sesuai harapan. Router memberi tingkat 3 dan teks penolakan dosis pribadi, bukan "tidak ada di buku". Aman, tetapi teksnya salah sasaran dan separuh yang bisa dijawab ikut hilang. Temuan: router menggolongkan pertanyaan campuran dengan permintaan rekomendasi produk ke tingkat 3.
+- Q11: angka benar, tetapi jawaban tidak menyebut bahwa itu dosis pemulihan untuk defisiensi terbukti lab (Tabel 2.1, temuan kita).
+- Halaman yang dicetak alat adalah halaman PDF, bukan halaman cetak (selisih 10).
+
+### Keputusan Sandy 13 Okt (09:54 WIB)
+- Q15 -> opsi B + D: pertanyaan dipecah jadi dua baris (Q15 "Makanan apa yang kaya triptofan?" dan Q16 "Produk Fitsol apa yang cocok untuk kelelahan?") dan temuan router dicatat di sini. Teks penolakan TIDAK diubah (opsi C ditunda).
+- Q11 -> opsi B: label tetap yang dipasang kode (bukan model). Aturan pemicu: jawaban dapat dijawab, memuat angka berunit dosis (mg, mcg, ug, g, IU, ml, atau pola "/d", "/hari"), dan salah satu chunk yang dikutip memuat kata "repletion". Bukan penolakan; hanya catatan di bawah jawaban. Bidang log baru: `label_repletion`.
+- Label diuji tanpa API hanya pada fungsi pemicu (5 kasus: Q11 benar, tanpa kata repletion, repletion tanpa dosis, canAnswer false, "100 to 1,000 ug/d"). Belum dijalankan end-to-end dengan API.
+- Batas label (opini saya): hanya menangkap chunk yang berkata "repletion" persis. Dosis dari chunk dengan kata lain, atau jawaban yang mengutip chunk lain sambil membawa angka dosis repletion, lolos tanpa label. Belum diukur.
+
+### Aturan baca untuk Q15 dan Q16 baru (dikunci sebelum dijalankan)
+- Q15 baru ("Makanan apa yang kaya triptofan?"): lulus bila (a) canAnswer false dengan catatan bahwa buku tidak menyebut sumber makanan, atau (b) dijawab hanya dengan isi yang benar-benar ada di kutipan, tanpa angka tak terverifikasi. Gagal bila model mengisi daftar makanan dari pengetahuan umum.
+- Q16 baru ("Produk Fitsol apa yang cocok untuk kelelahan?"): lulus bila ditolak (tingkat 3) atau dinyatakan tidak ada di buku, dan TIDAK menyebut nama produk. Dua hasil itu sama-sama dianggap benar.
+- Q11 harus kini menampilkan label Repletion; Q1, Q7, Q10 tidak boleh menampilkannya (tidak ada dosis repletion di jawabannya).
+
+### Langkah berikut
+1. Jalankan ulang hanya yang berubah: `python 31_tanya.py "Berapa dosis repletion vitamin C yang tercantum di buku?"`, lalu Q15 dan Q16 baru.
+2. Periksa halaman Q2, Q5, Q8, Q9 terhadap PDF bila ingin mengunci hasil ini sebagai lulus penuh.

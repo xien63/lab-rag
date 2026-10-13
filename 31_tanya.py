@@ -7,6 +7,8 @@ Jalur gagal-aman (--aman): router gagal -> penolakan tetap bila ada penanda prib
 Tambahan khusus alat ini (tidak mengubah kebijakan, hanya menambah pengaman):
   - Pemeriksa angka: setiap angka (bukan bilangan bulat 0-10) di jawaban harus ada di kutipan atau teks chunk yang dikutip.
     Bila tidak, jawaban ringkas DISEMBUNYIKAN dan hanya kutipan + halaman yang ditampilkan.
+  - Label Repletion (Q11-B, 13 Okt): jawaban berangka dosis yang mengutip chunk berkata "repletion" diberi catatan tetap
+    (dosis pemulihan defisiensi terbukti lab, bukan dosis harian umum). Deterministik, bukan dari model.
   - Setiap tanya dicatat ke full\\tanya_log.jsonl (folder full/ tidak masuk git).
 
 Pakai:
@@ -404,6 +406,19 @@ def angka_tak_terverifikasi(ans, sumber_teks):
             hilang.append(x)
     return hilang
 
+POLA_DOSIS = re.compile(r"\d[\d.,]*\s*(?:mg|mcg|\u00b5g|\u03bcg|g|iu|ml)\b|\d\s*/\s*(?:d|hari)\b", re.I)
+LABEL_REPLETION = ("CATATAN: angka di atas berasal dari baris 'Repletion' di buku, yaitu dosis pemulihan "
+                   "(sekitar 90 hari) untuk defisiensi yang terbukti lewat tes lab. Bukan dosis harian umum "
+                   "dan bukan batas atas aman.")
+def perlu_label_repletion(ans, kutip, teks_chunk):
+    """Q11-B (13 Okt): label deterministik (bukan dari model). Muncul bila jawaban memuat angka dosis
+    DAN salah satu chunk yang dikutip memuat kata 'repletion'."""
+    if not (ans.get("canAnswer") and str(ans.get("answer") or "").strip()):
+        return False
+    if not POLA_DOSIS.search(str(ans.get("answer"))):
+        return False
+    return any("repletion" in t.lower() for t in teks_chunk)
+
 def tanya(q):
     qk = kueri_dari(q)
     r = client.models.embed_content(model=EMB_MODEL, contents=[qk], config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"))
@@ -461,8 +476,9 @@ def tanya(q):
     if ans.get("canAnswer") and str(ans.get("answer") or "").strip():
         sumber = str(ans.get("quote") or "") + "\n" + "\n".join(texts[idx[c]] for c in kutip)
         hilang = angka_tak_terverifikasi(ans, sumber)
+    label = bool(not hilang and perlu_label_repletion(ans, kutip, [texts[idx[c]] for c in kutip]))
     return dict(q=q, tingkat=tingkat, alasan=alasan, degradasi=degradasi, model=model_used, ans=ans, kutip=kutip,
-                pages=pages, hilang=hilang, dipangkas=dipangkas)
+                pages=pages, hilang=hilang, dipangkas=dipangkas, label_repletion=label)
 
 GARIS = "-" * 72
 def tampil(h):
@@ -475,6 +491,8 @@ def tampil(h):
         print("             Jawaban ringkas disembunyikan. Baca kutipan di bawah dan periksa sendiri.")
     elif ans.get("canAnswer"):
         print("\nJawaban:\n" + str(ans.get("answer") or "").strip())
+        if h.get("label_repletion"):
+            print("\n" + LABEL_REPLETION)
     else:
         print("\nTidak dijawab dari buku.")
     if ans.get("note"):
@@ -493,7 +511,7 @@ LOG = BASE / "tanya_log.jsonl"
 def catat(h):
     rec = dict(waktu=datetime.datetime.now().isoformat(timespec="seconds"), q=h["q"], tingkat=h["tingkat"], degradasi=h["degradasi"],
                model=h["model"], canAnswer=h["ans"].get("canAnswer"), answer=h["ans"].get("answer"), quote=h["ans"].get("quote"),
-               note=h["ans"].get("note"), halaman=h["pages"], chunk=h["kutip"], angka_tak_terverifikasi=h["hilang"], dipangkas=h["dipangkas"], v5=V5)
+               note=h["ans"].get("note"), halaman=h["pages"], chunk=h["kutip"], angka_tak_terverifikasi=h["hilang"], dipangkas=h["dipangkas"], label_repletion=h.get("label_repletion", False), v5=V5)
     with LOG.open("a", encoding="utf-8") as f:
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 

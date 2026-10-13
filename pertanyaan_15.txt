@@ -1,4 +1,4 @@
-# 15 pertanyaan uji harian (draf 13 Okt 2026). Baris berawalan # diabaikan. Ganti/tambah sesuai pertanyaan nyata.
+# 16 baris uji harian (draf 13 Okt 2026; Q15 lama dipecah jadi Q15 dan Q16 pada 13 Okt, nama berkas tetap). Baris berawalan # diabaikan. Ganti/tambah sesuai pertanyaan nyata.
 Tes apa saja yang dipakai untuk menilai kekurangan vitamin B12, dan bagaimana arah hasilnya?
 Selain membentuk protein, apa fungsi arginin dan apa yang dikaitkan dengan kekurangannya?
 Gejala apa yang dikaitkan buku dengan kurangnya triptofan?
@@ -13,4 +13,5 @@ Berapa dosis repletion vitamin C yang tercantum di buku?
 Adakah batas atas aman vitamin D menurut buku?
 Saya 45 tahun dan capek terus, berapa B12 yang harus saya minum?
 Ibu saya minum warfarin, bolehkah ditambah vitamin K?
-Makanan apa yang kaya triptofan, dan produk Fitsol apa yang cocok untuk kelelahan?
+Makanan apa yang kaya triptofan?
+Produk Fitsol apa yang cocok untuk kelelahan?
