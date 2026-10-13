@@ -56,7 +56,8 @@ def jalankan(tanya, catat, label_teks, log_path, contoh_path, chunk_teks, port=8
             try:
                 r = json.loads(b)
                 out.append({"waktu": r.get("waktu", ""), "q": r.get("q", ""), "tingkat": r.get("tingkat"),
-                            "canAnswer": bool(r.get("canAnswer"))})
+                            "canAnswer": bool(r.get("canAnswer")),
+                            "tersembunyi": bool(r.get("angka_tak_terverifikasi"))})
             except Exception:
                 pass
         return out

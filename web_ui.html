@@ -9,18 +9,21 @@
   --bg:#f6f3ee; --panel:#fffdf9; --ink:#23201b; --mute:#6f675c; --line:#e3dcd0;
   --accent:#2f5d50; --accent-ink:#ffffff; --ok:#2f5d50; --ok-bg:#e6f0ec;
   --warn:#8a5a00; --warn-bg:#fbf0d9; --stop:#8b2e2e; --stop-bg:#f7e4e2; --quote-bg:#f1ece3;
+  color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#16140f; --panel:#1f1c16; --ink:#ece6da; --mute:#a39a8b; --line:#3a352b;
     --accent:#7fb5a3; --accent-ink:#10201a; --ok:#8cc4b1; --ok-bg:#1c2a25;
     --warn:#e0b45a; --warn-bg:#2d2512; --stop:#e59a95; --stop-bg:#2e1a19; --quote-bg:#262218;
+    color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#16140f; --panel:#1f1c16; --ink:#ece6da; --mute:#a39a8b; --line:#3a352b;
   --accent:#7fb5a3; --accent-ink:#10201a; --ok:#8cc4b1; --ok-bg:#1c2a25;
   --warn:#e0b45a; --warn-bg:#2d2512; --stop:#e59a95; --stop-bg:#2e1a19; --quote-bg:#262218;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 button{font-family:inherit}
@@ -66,6 +69,9 @@ aside h2{font-weight:600;font-size:13px;line-height:1;font-family:inherit;letter
 .titik{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--ok)}
 .titik.no{background:var(--warn)} .titik.stop{background:var(--stop)}
 .mute{color:var(--mute);font-size:14px}
+.legenda{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:10px;font-size:12.5px;line-height:1.45;color:var(--mute)}
+.legenda div{display:flex;gap:2px;align-items:baseline;padding:2px 0}
+.legenda .titik{flex:none}
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:10px}
 .tab{background:none;border:0;border-bottom:2px solid transparent;color:var(--mute);padding:6px 10px;cursor:pointer;font-size:14px;font-weight:600}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
@@ -121,7 +127,14 @@ footer{grid-column:1/-1;color:var(--mute);font-size:12.5px;border-top:1px solid 
       <button class="tab" id="tab-riw" role="tab" aria-selected="true" type="button">Riwayat</button>
       <button class="tab" id="tab-toc" role="tab" aria-selected="false" type="button">Daftar isi</button>
     </div>
-    <div id="panel-riw"><div id="riwayat"><div class="mute">Belum ada.</div></div></div>
+    <div id="panel-riw">
+      <div class="legenda" aria-label="Arti warna titik di riwayat">
+        <div><span class="titik"></span><span><b>Hijau</b>: dijawab dari buku</span></div>
+        <div><span class="titik no"></span><span><b>Kuning</b>: tidak dijawab dari buku, atau jawaban disembunyikan karena ada angka yang tidak ditemukan di kutipan</span></div>
+        <div><span class="titik stop"></span><span><b>Merah</b>: ditolak, karena pertanyaan pribadi atau keputusan pengobatan</span></div>
+      </div>
+      <div id="riwayat"><div class="mute">Belum ada.</div></div>
+    </div>
     <div id="panel-toc" hidden>
       <input class="cari" id="cari" type="search" placeholder="Cari judul bab, tabel, atau topik" aria-label="Cari di daftar isi">
       <div class="tocbox" id="toc"><div class="mute">Memuat…</div></div>
@@ -298,7 +311,11 @@ async function muatRiwayat() {
     if (!d.length) { w.appendChild(el("div", "mute", "Belum ada.")); return; }
     d.forEach((r) => {
       const b = el("button", "riw"); b.type = "button";
-      const titik = el("span", "titik" + (r.tingkat === "3" ? " stop" : r.canAnswer ? "" : " no"));
+      const jenis = r.tingkat === "3" ? "stop" : (!r.canAnswer || r.tersembunyi) ? "no" : "";
+      const titik = el("span", "titik" + (jenis ? " " + jenis : ""));
+      b.title = jenis === "stop" ? "Ditolak: pertanyaan pribadi atau keputusan pengobatan"
+              : jenis === "no" ? (r.tersembunyi ? "Jawaban disembunyikan: angka tidak ditemukan di kutipan" : "Tidak dijawab dari buku")
+              : "Dijawab dari buku";
       b.appendChild(titik);
       b.appendChild(document.createTextNode(r.q.length > 70 ? r.q.slice(0, 70) + "…" : r.q));
       b.appendChild(el("small", "", (r.waktu || "").replace("T", " ")));
